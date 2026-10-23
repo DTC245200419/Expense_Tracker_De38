@@ -5,8 +5,9 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/docs/evidence"
 mkdir -p "$OUT"
-# shellcheck disable=SC1091
-[ -f "$ROOT/.env" ] && set -a && . "$ROOT/.env" && set +a
+envval() { grep -E "^$1=" "$ROOT/.env" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r'; }
+PROMETHEUS_PORT="$(envval PROMETHEUS_PORT)"; GRAFANA_PORT="$(envval GRAFANA_PORT)"
+GRAFANA_ADMIN_PASSWORD="$(envval GRAFANA_ADMIN_PASSWORD)"
 PROM="http://127.0.0.1:${PROMETHEUS_PORT:-9090}"
 GRAF="http://127.0.0.1:${GRAFANA_PORT:-3000}"
 DC=(docker compose --project-directory "$ROOT" -f "$ROOT/compose.yaml" -f "$ROOT/compose.monitoring.yaml" -f "$ROOT/compose.logging.yaml")

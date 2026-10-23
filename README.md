@@ -4,10 +4,10 @@ Học phần **Triển khai & Quản trị Hệ thống Phần mềm** – Trư�
 
 | | |
 |---|---|
-| Sinh viên | *(điền họ tên)* |
-| Mã sinh viên | *(điền MSSV)* |
-| Lớp | *(điền lớp)* |
-| Giảng viên hướng dẫn | *(điền tên GV)* |
+| Sinh viên | Hoàng Văn Tâm |
+| Mã sinh viên | DTC245200419 |
+| Lớp | CNTTK23K |
+| GitHub | https://github.com/hvantam0908-netizen |
 
 Ứng dụng web theo dõi chi tiêu cá nhân / gia đình: **giao dịch** (thu/chi), **danh mục**, **báo cáo** theo tháng và xu hướng 6 tháng. Toàn bộ hệ thống chạy bằng **Docker Compose**, gồm ứng dụng Node.js, PostgreSQL + pgAdmin, Nginx reverse proxy (HTTPS tự ký), Prometheus + Grafana, Loki + Promtail và các biện pháp hardening.
 
@@ -143,6 +143,7 @@ Tạo tải để đồ thị có dữ liệu: `sh scripts/make-traffic.sh`.
 
 - Nginx ghi access log **JSON** vào volume `nginx_logs`; app ghi sự kiện JSON (`http_request`, `login_success`, `login_failed`, `csrf_denied`, `login_rate_limited`, `access_denied`, `transaction_*`, `category_*`) vào volume `app_logs`. Không ghi mật khẩu, cookie, session id.
 - Promtail mount hai volume **chỉ đọc**, gắn nhãn `job=nginx | nginx-error | app`, đẩy lên Loki (không publish cổng; auth tắt vì chỉ trong mạng nội bộ).
+- `compose.logging.yaml` thay thư mục datasources của Grafana bằng `logging/grafana-datasources/` (Prometheus + Loki).
 - Grafana → **Explore** → datasource **Loki**. Các truy vấn LogQL dùng trong báo cáo:
 
 ```logql
