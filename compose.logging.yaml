@@ -1,0 +1,83 @@
+# Giai doan 3: Loki + Promtail (log tap trung), truy van bang LogQL trong Grafana Explore
+# docker compose -f compose.yaml -f compose.monitoring.yaml -f compose.logging.yaml up -d --build
+services:
+  # Chuan bi quyen volume cho Loki/Promtail (UID 10001) roi thoat
+  init-logging:
+    image: busybox:1.37.0
+    user: "0:0"
+    network_mode: none
+    command:
+      - sh
+      - -c
+      - |
+        chown -R 10001:10001 /mnt/loki /mnt/positions &&
+        echo "init-logging: OK"
+    volumes:
+      - loki_data:/mnt/loki
+      - promtail_positions:/mnt/positions
+    restart: "no"
+
+  loki:
+    image: grafana/loki:3.4.2
+    restart: unless-stopped
+    user: "10001:10001"
+    command:
+      - -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./logging/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring
+    expose:
+      - "3100"
+    depends_on:
+      init-logging:
+        condition: service_completed_successfully
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3100/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    restart: unless-stopped
+    user: "10001:10001"
+    command:
+      - -config.file=/etc/promtail/promtail-config.yaml
+    volumes:
+      - ./logging/promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+      - app_logs:/logs/app:ro
+      - nginx_logs:/logs/nginx:ro
+      - promtail_positions:/positions
+    networks:
+      - monitoring
+    depends_on:
+      loki:
+        condition: service_healthy
+      init-logging:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  # Them datasource Loki vao Grafana
+  grafana:
+    volumes:
+      - ./logging/grafana-datasource-loki.yaml:/etc/grafana/provisioning/datasources/loki.yaml:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+
+volumes:
+  loki_data:
+  promtail_positions:

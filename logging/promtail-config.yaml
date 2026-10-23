@@ -1,0 +1,62 @@
+# Promtail doc log tu named volumes (chi doc) va day len Loki
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /positions/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Access log JSON cua Nginx
+  - job_name: nginx-access
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: nginx
+          service: expense-tracker
+          source: access
+          __path__: /logs/nginx/access.log
+    pipeline_stages:
+      - json:
+          expressions:
+            time: time
+            status: status
+            method: method
+      - timestamp:
+          source: time
+          format: RFC3339
+
+  # Error log cua Nginx
+  - job_name: nginx-error
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: nginx-error
+          service: expense-tracker
+          source: error
+          __path__: /logs/nginx/error.log
+
+  # Log JSON cua ung dung Node (su kien HTTP, dang nhap, CRUD)
+  - job_name: application
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: app
+          service: expense-tracker
+          source: app
+          __path__: /logs/app/app.log
+    pipeline_stages:
+      - json:
+          expressions:
+            time: time
+            level: level
+            event: event
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - labels:
+          level:
