@@ -10,10 +10,9 @@ JAR="$(mktemp)"
 CURL=(curl -s -o /dev/null --max-time 15 -c "$JAR" -b "$JAR")
 [ -n "$CA" ] && CURL+=(--cacert "$CA")
 
-# shellcheck disable=SC1091
-[ -f "$ROOT/.env" ] && set -a && . "$ROOT/.env" && set +a
-ADMIN_USERNAME="${ADMIN_USERNAME:-admin}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+envval() { grep -E "^$1=" "$ROOT/.env" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r'; }
+ADMIN_USERNAME="$(envval ADMIN_USERNAME)"; ADMIN_USERNAME="${ADMIN_USERNAME:-admin}"
+ADMIN_PASSWORD="$(envval ADMIN_PASSWORD)"
 
 PASS=0; FAIL=0
 check() { # check "ten" "ket qua mong doi" "ket qua thuc te"

@@ -16,9 +16,14 @@ SUBJ="/C=VN/ST=Thai Nguyen/O=ICTU De 38/CN=localhost"
 EXT="subjectAltName=DNS:localhost,IP:127.0.0.1"
 
 if command -v openssl >/dev/null 2>&1; then
-  openssl req -x509 -newkey rsa:3072 -sha256 -days 30 -nodes \
-    -keyout "$CERT_DIR/server.key" -out "$CERT_DIR/server.crt" \
-    -subj "$SUBJ" -addext "$EXT"
+  # Tao trong thu muc tam (duong dan ASCII) vi openssl tren Windows khong ghi duoc duong dan co dau
+  TMP="$(mktemp -d)"
+  KEY="$TMP/server.key"; CRT="$TMP/server.crt"
+  # Git Bash: openssl la binary Windows -> dua duong dan Windows va tat chuyen doi "/C=VN/..." cua MSYS
+  if command -v cygpath >/dev/null 2>&1; then KEY="$(cygpath -w "$KEY")"; CRT="$(cygpath -w "$CRT")"; fi
+  MSYS_NO_PATHCONV=1 openssl req -x509 -newkey rsa:3072 -sha256 -days 30 -nodes \
+    -keyout "$KEY" -out "$CRT" -subj "$SUBJ" -addext "$EXT" 2>/dev/null
+  mv "$TMP/server.key" "$TMP/server.crt" "$CERT_DIR/" && rmdir "$TMP"
 else
   echo "Khong co openssl cuc bo, dung container alpine..."
   MSYS_NO_PATHCONV=1 docker run --rm -v "$CERT_DIR:/certs" alpine:3.21 sh -c \

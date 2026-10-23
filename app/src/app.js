@@ -63,8 +63,11 @@ function createApp({ repo, logger, config, sessionStore }) {
           frameAncestors: ["'none'"],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
+          // Chi ep nang cap HTTPS khi dang chay sau TLS; o HTTP localhost se lam hong tai CSS
+          upgradeInsecureRequests: config.session.cookieSecure ? [] : null,
         },
       },
+      frameguard: { action: 'deny' },
       hsts: config.session.cookieSecure ? { maxAge: 86400, includeSubDomains: true } : false,
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
       crossOriginEmbedderPolicy: false,

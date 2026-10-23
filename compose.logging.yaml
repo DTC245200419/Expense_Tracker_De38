@@ -70,10 +70,11 @@ services:
     cap_drop:
       - ALL
 
-  # Them datasource Loki vao Grafana
+  # Thay thu muc datasources cua Grafana bang ban co ca Prometheus + Loki
+  # (mount ca thu muc vi /etc/grafana/provisioning da duoc mount chi doc o giai doan 2)
   grafana:
     volumes:
-      - ./logging/grafana-datasource-loki.yaml:/etc/grafana/provisioning/datasources/loki.yaml:ro
+      - ./logging/grafana-datasources:/etc/grafana/provisioning/datasources:ro
     depends_on:
       loki:
         condition: service_healthy
