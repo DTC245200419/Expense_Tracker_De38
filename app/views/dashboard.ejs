@@ -1,0 +1,74 @@
+<%- include('partials/header') %>
+<h1>Tổng quan tháng <%= month %></h1>
+
+<section class="stats">
+  <div class="stat stat-income">
+    <div class="stat-label">Tổng thu</div>
+    <div class="stat-value"><%= formatMoney(summary.income) %></div>
+  </div>
+  <div class="stat stat-expense">
+    <div class="stat-label">Tổng chi</div>
+    <div class="stat-value"><%= formatMoney(summary.expense) %></div>
+  </div>
+  <div class="stat <%= summary.income - summary.expense >= 0 ? 'stat-income' : 'stat-expense' %>">
+    <div class="stat-label">Chênh lệch</div>
+    <div class="stat-value"><%= formatMoney(summary.income - summary.expense) %></div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Số giao dịch</div>
+    <div class="stat-value"><%= summary.count %></div>
+  </div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Xu hướng 6 tháng</h2>
+    <%- include('partials/trend', { trend }) %>
+  </section>
+
+  <section class="card">
+    <h2>Chi nhiều nhất tháng này</h2>
+    <% if (!topExpense.length) { %>
+      <p class="muted">Chưa có khoản chi nào trong tháng.</p>
+    <% } else { %>
+    <table class="table">
+      <thead><tr><th>Danh mục</th><th class="num">Số tiền</th><th class="num">Số GD</th></tr></thead>
+      <tbody>
+      <% topExpense.forEach(c => { %>
+        <tr>
+          <td><span class="dot" data-color="<%= c.color %>"></span><%= c.name %></td>
+          <td class="num"><%= formatMoney(c.total) %></td>
+          <td class="num"><%= c.count %></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Giao dịch gần đây</h2>
+    <a href="/transactions" class="btn btn-ghost">Xem tất cả</a>
+  </div>
+  <% if (!recent.length) { %>
+    <p class="muted">Chưa có giao dịch. <a href="/transactions">Thêm giao dịch đầu tiên</a>.</p>
+  <% } else { %>
+  <table class="table">
+    <thead><tr><th>Ngày</th><th>Loại</th><th>Danh mục</th><th>Ghi chú</th><th class="num">Số tiền</th></tr></thead>
+    <tbody>
+    <% recent.forEach(t => { %>
+      <tr>
+        <td><%= formatDate(t.occurred_on) %></td>
+        <td><span class="badge badge-<%= t.kind %>"><%= kindLabel(t.kind) %></span></td>
+        <td><%= t.category_name %></td>
+        <td><%= t.note %></td>
+        <td class="num amount-<%= t.kind %>"><%= t.kind === 'income' ? '+' : '-' %><%= formatMoney(t.amount) %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

@@ -1,0 +1,28 @@
+# Bi mat va cau hinh cuc bo
+.env
+secrets/*
+!secrets/.gitkeep
+
+# Chung chi TLS tu ky
+certs/*.crt
+certs/*.key
+certs/*.pem
+
+# Backup SQL
+backups/*.sql
+backups/*.sql.gz
+
+# Node
+app/node_modules/
+app/logs/
+npm-debug.log*
+
+# Ket qua kiem tra tam
+docs/evidence/*.tmp
+*.log
+
+# He dieu hanh / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

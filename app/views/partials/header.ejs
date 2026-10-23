@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · Expense Tracker</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a class="brand" href="/">💰 Expense Tracker <span class="muted">· Đề 38</span></a>
+    <% if (currentUser) { %>
+    <nav class="nav">
+      <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">Tổng quan</a>
+      <a href="/transactions" class="<%= currentPath.startsWith('/transactions') ? 'active' : '' %>">Giao dịch</a>
+      <a href="/categories" class="<%= currentPath.startsWith('/categories') ? 'active' : '' %>">Danh mục</a>
+      <a href="/reports" class="<%= currentPath.startsWith('/reports') ? 'active' : '' %>">Báo cáo</a>
+    </nav>
+    <div class="userbox">
+      <a href="/account/password" class="muted"><%= currentUser.displayName %></a>
+      <form method="post" action="/logout" class="inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn-ghost">Đăng xuất</button>
+      </form>
+    </div>
+    <% } %>
+  </div>
+</header>
+<main class="container">
+<% if (flash) { %>
+  <div class="flash flash-<%= flash.type %>"><%= flash.text %></div>
+<% } %>

@@ -1,0 +1,48 @@
+<%- include('partials/header') %>
+<h1>Danh mục</h1>
+<div class="grid-2">
+  <section class="card">
+    <h2>Thêm danh mục</h2>
+    <form method="post" action="/categories" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Tên danh mục
+        <input type="text" name="name" maxlength="64" required placeholder="Ăn uống, Lương...">
+      </label>
+      <div class="row">
+        <label>Loại
+          <select name="kind">
+            <option value="expense">Chi</option>
+            <option value="income">Thu</option>
+          </select>
+        </label>
+        <label>Màu
+          <input type="color" name="color" value="#4f46e5">
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">Thêm</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Danh sách (<%= categories.length %>)</h2>
+    <table class="table">
+      <thead><tr><th>Tên</th><th>Loại</th><th></th></tr></thead>
+      <tbody>
+      <% categories.forEach(c => { %>
+        <tr>
+          <td><span class="dot" data-color="<%= c.color %>"></span><%= c.name %></td>
+          <td><span class="badge badge-<%= c.kind %>"><%= kindLabel(c.kind) %></span></td>
+          <td class="actions">
+            <form method="post" action="/categories/<%= c.id %>/delete" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+    <p class="muted">Danh mục đang có giao dịch sẽ không xóa được (ràng buộc khóa ngoại).</p>
+  </section>
+</div>
+<%- include('partials/footer') %>

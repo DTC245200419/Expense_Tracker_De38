@@ -1,0 +1,23 @@
+{
+  "name": "expense-tracker-de38",
+  "version": "1.0.0",
+  "description": "De 38 - He thong Quan ly Chi tieu (Expense Tracker) - Node.js + Express + PostgreSQL",
+  "main": "src/server.js",
+  "private": true,
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test tests/",
+    "check": "node --check src/server.js && node --check src/app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "connect-pg-simple": "10.0.0",
+    "ejs": "3.1.10",
+    "express": "4.21.2",
+    "express-session": "1.18.1",
+    "helmet": "8.1.0",
+    "pg": "8.14.1"
+  }
+}

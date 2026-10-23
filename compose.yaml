@@ -1,0 +1,178 @@
+# Giai doan 1: ung dung Expense Tracker + PostgreSQL + pgAdmin + Nginx reverse proxy
+# Chay:  docker compose up -d --build
+name: de38-expense
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+  # Chuan bi quyen cho named volumes roi thoat (Exited 0 la trang thai dung)
+  init-perms:
+    image: busybox:1.37.0
+    user: "0:0"
+    network_mode: none
+    command:
+      - sh
+      - -c
+      - |
+        chown -R 1000:1000 /mnt/app_logs &&
+        chown -R 101:101 /mnt/nginx_logs &&
+        chmod 755 /mnt/app_logs /mnt/nginx_logs &&
+        echo "init-perms: OK"
+    volumes:
+      - app_logs:/mnt/app_logs
+      - nginx_logs:/mnt/nginx_logs
+    restart: "no"
+
+  postgres:
+    image: postgres:17.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-expense}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Thieu POSTGRES_PASSWORD - chay scripts/setup.ps1 hoac setup.sh}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Thieu APP_DB_PASSWORD}
+      EXPORTER_DB_PASSWORD: ${EXPORTER_DB_PASSWORD:?Thieu EXPORTER_DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - database
+    # Khong publish cong 5432 ra host: chi truy cap qua pgAdmin / docker compose exec
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${DB_NAME:-expense}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    shm_size: 128mb
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      # Entrypoint cua postgres can cac quyen nay de chown data dir va ha quyen xuong user postgres
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+
+  app:
+    build: ./app
+    image: de38-expense-app:1.0.0
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-expense}
+      DB_USER: expense_app
+      DB_PASSWORD: ${APP_DB_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET:?Thieu SESSION_SECRET}
+      SESSION_TTL_SECONDS: "3600"
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Thieu ADMIN_PASSWORD}
+      ADMIN_DISPLAY_NAME: ${ADMIN_DISPLAY_NAME:-Quan tri vien}
+      LOG_DIR: /app/logs
+    volumes:
+      - app_logs:/app/logs
+    networks:
+      - web
+      - database
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-perms:
+        condition: service_completed_successfully
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    <<: *hardening
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  nginx:
+    image: nginxinc/nginx-unprivileged:1.28-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${NGINX_HTTP_PORT:-8080}:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - nginx_logs:/logs/nginx
+    networks:
+      - web
+    depends_on:
+      app:
+        condition: service_healthy
+      init-perms:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    <<: *hardening
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8082/stub_status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  pgadmin:
+    image: dpage/pgadmin4:9.2
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?Thieu PGADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: "5050"
+      PGADMIN_DISABLE_POSTFIX: "true"
+    volumes:
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT:-8081}:5050"
+    networks:
+      - database
+      - management
+    depends_on:
+      postgres:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  # Nginx <-> app
+  web:
+    driver: bridge
+  # PostgreSQL chi noi voi app, pgAdmin va exporter; internal = khong ra Internet, khong NAT
+  database:
+    driver: bridge
+    internal: true
+  # Mang khong-internal de pgAdmin publish duoc cong ra host
+  management:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  app_logs:
+  nginx_logs:

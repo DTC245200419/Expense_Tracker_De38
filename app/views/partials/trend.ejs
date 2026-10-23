@@ -1,0 +1,21 @@
+<% if (!trend.rows.length) { %>
+  <p class="muted">Chưa có dữ liệu để vẽ biểu đồ.</p>
+<% } else { %>
+<% const w = 60; const gap = 16; const chartW = trend.rows.length * (w + gap); const h = trend.height; %>
+<svg class="chart" viewBox="0 0 <%= chartW %> <%= h + 28 %>" role="img" aria-label="Biểu đồ thu chi 6 tháng">
+  <line x1="0" y1="<%= h %>" x2="<%= chartW %>" y2="<%= h %>" class="axis"></line>
+  <% trend.rows.forEach((r, i) => { const x = i * (w + gap); %>
+    <rect x="<%= x %>" y="<%= h - r.incomeH %>" width="<%= w / 2 - 2 %>" height="<%= r.incomeH %>" class="bar-income">
+      <title>Thu <%= r.month %>: <%= formatMoney(r.income) %></title>
+    </rect>
+    <rect x="<%= x + w / 2 + 2 %>" y="<%= h - r.expenseH %>" width="<%= w / 2 - 2 %>" height="<%= r.expenseH %>" class="bar-expense">
+      <title>Chi <%= r.month %>: <%= formatMoney(r.expense) %></title>
+    </rect>
+    <text x="<%= x + w / 2 %>" y="<%= h + 18 %>" text-anchor="middle" class="label"><%= r.month.slice(5) %>/<%= r.month.slice(2, 4) %></text>
+  <% }) %>
+</svg>
+<div class="legend">
+  <span><i class="swatch swatch-income"></i> Thu</span>
+  <span><i class="swatch swatch-expense"></i> Chi</span>
+</div>
+<% } %>
