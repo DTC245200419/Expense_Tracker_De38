@@ -1,0 +1,63 @@
+<%- include('partials/header') %>
+<div class="card-head">
+  <h1>Báo cáo tháng <%= month %></h1>
+  <form method="get" action="/reports" class="filter">
+    <input type="month" name="month" value="<%= month %>">
+    <button type="submit" class="btn btn-ghost">Xem</button>
+  </form>
+</div>
+
+<section class="stats">
+  <div class="stat stat-income"><div class="stat-label">Tổng thu</div><div class="stat-value"><%= formatMoney(summary.income) %></div></div>
+  <div class="stat stat-expense"><div class="stat-label">Tổng chi</div><div class="stat-value"><%= formatMoney(summary.expense) %></div></div>
+  <div class="stat"><div class="stat-label">Tiết kiệm</div><div class="stat-value"><%= formatMoney(summary.income - summary.expense) %></div></div>
+  <div class="stat"><div class="stat-label">Tỷ lệ chi/thu</div><div class="stat-value"><%= summary.income ? Math.round(summary.expense / summary.income * 100) : 0 %>%</div></div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Chi theo danh mục</h2>
+    <% if (!expense.rows.length) { %><p class="muted">Không có khoản chi.</p><% } else { %>
+    <ul class="bars">
+      <% expense.rows.forEach(r => { %>
+      <li>
+        <div class="bar-label"><span><%= r.name %></span><span class="num"><%= formatMoney(r.total) %> · <%= r.percent %>%</span></div>
+        <svg class="bar" viewBox="0 0 100 8" preserveAspectRatio="none"><rect x="0" y="0" width="<%= r.width %>" height="8" fill="<%= r.color %>"></rect></svg>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+  <section class="card">
+    <h2>Thu theo danh mục</h2>
+    <% if (!income.rows.length) { %><p class="muted">Không có khoản thu.</p><% } else { %>
+    <ul class="bars">
+      <% income.rows.forEach(r => { %>
+      <li>
+        <div class="bar-label"><span><%= r.name %></span><span class="num"><%= formatMoney(r.total) %> · <%= r.percent %>%</span></div>
+        <svg class="bar" viewBox="0 0 100 8" preserveAspectRatio="none"><rect x="0" y="0" width="<%= r.width %>" height="8" fill="<%= r.color %>"></rect></svg>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Xu hướng 6 tháng gần nhất</h2>
+  <%- include('partials/trend', { trend }) %>
+  <table class="table">
+    <thead><tr><th>Tháng</th><th class="num">Thu</th><th class="num">Chi</th><th class="num">Chênh lệch</th></tr></thead>
+    <tbody>
+    <% trend.rows.forEach(r => { %>
+      <tr>
+        <td><%= r.month %></td>
+        <td class="num amount-income"><%= formatMoney(r.income) %></td>
+        <td class="num amount-expense"><%= formatMoney(r.expense) %></td>
+        <td class="num"><%= formatMoney(r.income - r.expense) %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('partials/footer') %>

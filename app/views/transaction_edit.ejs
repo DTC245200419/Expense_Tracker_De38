@@ -1,0 +1,39 @@
+<%- include('partials/header') %>
+<section class="card card-narrow">
+  <h1>Sửa giao dịch #<%= item.id %></h1>
+  <% if (errors.length) { %>
+    <div class="flash flash-error"><%= errors.join(' ') %></div>
+  <% } %>
+  <form method="post" action="/transactions/<%= item.id %>" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="row">
+      <label>Loại
+        <select name="kind">
+          <option value="expense" <%= item.kind === 'expense' ? 'selected' : '' %>>Chi</option>
+          <option value="income" <%= item.kind === 'income' ? 'selected' : '' %>>Thu</option>
+        </select>
+      </label>
+      <label>Ngày
+        <input type="date" name="occurred_on" value="<%= String(item.occurred_on || '').slice(0, 10) %>" required>
+      </label>
+    </div>
+    <label>Danh mục
+      <select name="category_id" required>
+        <% categories.forEach(c => { %>
+          <option value="<%= c.id %>" <%= Number(item.category_id) === c.id ? 'selected' : '' %>><%= kindLabel(c.kind) %> · <%= c.name %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Số tiền (₫)
+      <input type="number" name="amount" min="1" step="1" value="<%= item.amount %>" required>
+    </label>
+    <label>Ghi chú
+      <input type="text" name="note" maxlength="255" value="<%= item.note || '' %>">
+    </label>
+    <div class="row">
+      <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+      <a href="/transactions" class="btn btn-ghost">Hủy</a>
+    </div>
+  </form>
+</section>
+<%- include('partials/footer') %>

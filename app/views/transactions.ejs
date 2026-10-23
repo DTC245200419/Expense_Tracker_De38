@@ -1,0 +1,85 @@
+<%- include('partials/header') %>
+<h1>Giao dịch</h1>
+
+<div class="grid-2 grid-2-wide">
+  <section class="card">
+    <h2>Thêm giao dịch</h2>
+    <form method="post" action="/transactions" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="row">
+        <label>Loại
+          <select name="kind">
+            <option value="expense" <%= form.kind === 'expense' ? 'selected' : '' %>>Chi</option>
+            <option value="income" <%= form.kind === 'income' ? 'selected' : '' %>>Thu</option>
+          </select>
+        </label>
+        <label>Ngày
+          <input type="date" name="occurred_on" value="<%= form.occurred_on %>" required>
+        </label>
+      </div>
+      <label>Danh mục
+        <select name="category_id" required>
+          <% categories.forEach(c => { %>
+            <option value="<%= c.id %>"><%= kindLabel(c.kind) %> · <%= c.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Số tiền (₫)
+        <input type="number" name="amount" min="1" step="1" placeholder="50000" required>
+      </label>
+      <label>Ghi chú
+        <input type="text" name="note" maxlength="255" placeholder="Ăn trưa, tiền điện...">
+      </label>
+      <button type="submit" class="btn btn-primary">Lưu giao dịch</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Danh sách (<%= total %>)</h2>
+      <form method="get" action="/transactions" class="filter">
+        <input type="month" name="month" value="<%= month === 'all' ? '' : month %>">
+        <select name="kind">
+          <option value="">Tất cả</option>
+          <option value="income" <%= kind === 'income' ? 'selected' : '' %>>Thu</option>
+          <option value="expense" <%= kind === 'expense' ? 'selected' : '' %>>Chi</option>
+        </select>
+        <button type="submit" class="btn btn-ghost">Lọc</button>
+        <a href="/transactions?month=all" class="btn btn-ghost">Mọi tháng</a>
+      </form>
+    </div>
+    <% if (!items.length) { %>
+      <p class="muted">Không có giao dịch phù hợp.</p>
+    <% } else { %>
+    <table class="table">
+      <thead><tr><th>Ngày</th><th>Loại</th><th>Danh mục</th><th>Ghi chú</th><th class="num">Số tiền</th><th></th></tr></thead>
+      <tbody>
+      <% items.forEach(t => { %>
+        <tr>
+          <td><%= formatDate(t.occurred_on) %></td>
+          <td><span class="badge badge-<%= t.kind %>"><%= kindLabel(t.kind) %></span></td>
+          <td><span class="dot" data-color="<%= t.category_color %>"></span><%= t.category_name %></td>
+          <td><%= t.note %></td>
+          <td class="num amount-<%= t.kind %>"><%= t.kind === 'income' ? '+' : '-' %><%= formatMoney(t.amount) %></td>
+          <td class="actions">
+            <a href="/transactions/<%= t.id %>/edit" class="btn btn-ghost btn-sm">Sửa</a>
+            <form method="post" action="/transactions/<%= t.id %>/delete" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+    <% if (pages > 1) { %>
+    <div class="pager">
+      <% for (let p = 1; p <= pages; p++) { %>
+        <a href="/transactions?month=<%= month %>&kind=<%= kind %>&page=<%= p %>" class="<%= p === page ? 'active' : '' %>"><%= p %></a>
+      <% } %>
+    </div>
+    <% } %>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/footer') %>

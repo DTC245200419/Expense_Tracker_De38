@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+<section class="card card-narrow">
+  <h1>Đăng nhập</h1>
+  <p class="muted">Ứng dụng theo dõi chi tiêu cá nhân / gia đình.</p>
+  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <form method="post" action="/login" class="form" autocomplete="off">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Tên đăng nhập
+      <input type="text" name="username" value="<%= username %>" maxlength="64" required autofocus>
+    </label>
+    <label>Mật khẩu
+      <input type="password" name="password" maxlength="256" required>
+    </label>
+    <button type="submit" class="btn btn-primary">Đăng nhập</button>
+  </form>
+</section>
+<%- include('partials/footer') %>

@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Expense PostgreSQL (De 38)",
+      "Group": "De 38",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "expense",
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "Comment": "Ket noi noi bo qua mang Docker 'database'. Mat khau: POSTGRES_PASSWORD trong .env"
+    }
+  }
+}
