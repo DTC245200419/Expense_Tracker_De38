@@ -3,13 +3,16 @@
 services:
   # Metrics container (CPU, RAM, network, I/O) tu Docker Engine
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    image: ghcr.io/google/cadvisor:0.55.1
     restart: unless-stopped
     privileged: true
     command:
       - --housekeeping_interval=10s
       - --docker_only=true
       - --store_container_labels=false
+      # Tat metric dung luong dia: tren Docker Desktop (containerd image store) cAdvisor khong tim duoc
+      # read-write layer cua container -> neu bat se bo qua toan bo container. Giu cpu, memory, network.
+      - --enable_metrics=cpu,memory,network,oom_event
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro

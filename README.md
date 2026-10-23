@@ -34,7 +34,7 @@ Log:       app.log + access.log/error.log ──▶ Promtail ──▶ Loki ─�
 | postgres | postgres:17.4-alpine | không publish | Lưu users, categories, transactions, sessions |
 | pgadmin | dpage/pgadmin4:9.2 | 8081 | Công cụ quản trị DB |
 | nginx | nginxinc/nginx-unprivileged:1.28-alpine | 8080, 8443 (TLS) | Reverse proxy, headers, HTTPS |
-| cadvisor | gcr.io/cadvisor/cadvisor:v0.52.1 | không publish | Metrics container |
+| cadvisor | ghcr.io/google/cadvisor:0.55.1 | không publish | Metrics container (bản ≥ 0.55 mới đọc được container khi Docker Desktop dùng containerd image store) |
 | nginx-exporter | nginx/nginx-prometheus-exporter:1.4.1 | không publish | Đọc stub_status |
 | postgres-exporter | prometheuscommunity/postgres-exporter:v0.17.1 | không publish | Metrics PostgreSQL |
 | prometheus | prom/prometheus:v3.2.1 | 9090 | Thu thập metrics, alert rules |
@@ -174,7 +174,19 @@ docker compose exec postgres dropdb -U postgres expense_restore_test
 | Commit 2 | Prometheus, Grafana, cAdvisor, nginx-exporter, postgres-exporter, dashboard, alert rules |
 | Commit 3 | Loki, Promtail, datasource Loki, truy vấn LogQL |
 
-## 11. Dừng / xoá
+## 11. Lỗi đã gặp khi chạy thực tế và cách xử lý
+
+| Hiện tượng | Nguyên nhân / xử lý |
+|---|---|
+| cAdvisor chỉ có series `id="/"`, log `failed to identify the read-write layer ID` | Docker Desktop dùng containerd image store (driver `overlayfs`); cAdvisor v0.52 không đọc được. Đổi sang `ghcr.io/google/cadvisor:0.55.1` |
+| Grafana không start: `create mountpoint ... read-only file system` | Mount thêm 1 file vào thư mục provisioning đã mount `:ro`. Mount cả thư mục `logging/grafana-datasources` thay thế |
+| `X-Frame-Options` trả `SAMEORIGIN` trong test | Helmet mặc định SAMEORIGIN, Nginx đặt DENY; cấu hình Helmet `frameguard: deny` cho thống nhất |
+| Header `Strict-Transport-Security` lặp 2 lần | Helmet và Nginx cùng thêm; dùng `proxy_hide_header` để giữ bản của Nginx |
+| `scripts/tls.sh` lỗi `Can't open ... for writing` trên Git Bash | openssl Windows không ghi được đường dẫn có dấu tiếng Việt và MSYS đổi `-subj` thành đường dẫn; tạo trong thư mục tạm + `cygpath` + `MSYS_NO_PATHCONV` |
+| `pg_dump` / `psql` trong container hỏi mật khẩu rồi treo | `--auth-local=scram-sha-256` bắt buộc mật khẩu cả socket cục bộ; script truyền `PGPASSWORD="$POSTGRES_PASSWORD"` |
+| CSS không tải khi mở `http://localhost:8080` | Helmet thêm `upgrade-insecure-requests`; chỉ bật directive này khi `COOKIE_SECURE=true` (TLS) |
+
+## 12. Dừng / xoá
 
 ```bash
 sh scripts/compose.sh tls down          # dừng, giữ dữ liệu (volumes)

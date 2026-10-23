@@ -1,0 +1,6 @@
+up => {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","instance":"prometheus:9090","job":"prometheus"},"value":[1792739510.148,"1"]},{"metric":{"__name__":"up","instance":"cadvisor:8080","job":"cadvisor"},"value":[1792739510.148,"1"]},{"metric":{"__name__":"up","instance":"postgres-exporter:9187","job":"postgres"},"value":[1792739510.148,"1"]},{"metric":{"__name__":"up","instance":"nginx-exporter:9113","job":"nginx"},"value":[1792739510.148,"1"]}]}}
+nginx_up => {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"nginx_up","instance":"nginx-exporter:9113","job":"nginx"},"value":[1792739510.230,"1"]}]}}
+pg_up => {"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"pg_up","instance":"postgres-exporter:9187","job":"postgres"},"value":[1792739510.309,"1"]}]}}
+sum(rate(nginx_http_requests_total[2m])) => {"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792739510.380,"0.40002285844905416"]}]}}
+sum(pg_stat_database_numbackends{datname="expense"}) => {"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792739510.441,"3"]}]}}
+count(container_last_seen{name=~"de38-expense-.*"}) => {"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792739510.498,"11"]}]}}

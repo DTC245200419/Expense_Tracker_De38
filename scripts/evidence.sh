@@ -29,7 +29,7 @@ for q in '{job="nginx"}' '{job="nginx"} | json | status >= 400' '{job="app"} | j
   curl -s -u "admin:${GRAFANA_ADMIN_PASSWORD:-admin}" -G "$GRAF/api/datasources/proxy/uid/loki/loki/api/v1/query_range" \
     --data-urlencode "query=$q" --data-urlencode "start=$START_NS" --data-urlencode "end=$NOW_NS" --data-urlencode "limit=10" \
     > "$OUT/logql-$i.json"
-  printf '%-50s status=%s lines=%s\n' "$q" "$(grep -o '"status":"[a-z]*"' "$OUT/logql-$i.json" | head -1)" "$(grep -o '"values":\[\[' "$OUT/logql-$i.json" | wc -l)"
+  printf '%-50s status=%s lines=%s\n' "$q" "$(grep -o '"status":"[a-z]*"' "$OUT/logql-$i.json" | head -1)" "$(grep -o '\["[0-9]\{19\}","' "$OUT/logql-$i.json" | wc -l | tr -d ' ')"
 done
 
 echo "== Hardening: uid, read-only, caps, mang internal, quyen DB =="
@@ -42,9 +42,9 @@ echo "== Hardening: uid, read-only, caps, mang internal, quyen DB =="
   echo "database network Internal: $(docker network inspect -f '{{.Internal}}' de38-expense_database)"
   echo "postgres PortBindings: $(docker inspect -f '{{.HostConfig.PortBindings}}' de38-expense-postgres-1)"
   echo "-- quyen expense_app --"
-  "${DC[@]}" exec -T postgres psql -U postgres -d expense -Atc "SELECT grantee, table_name, string_agg(privilege_type, ',') FROM information_schema.role_table_grants WHERE grantee='expense_app' GROUP BY 1,2 ORDER BY 2"
+  "${DC[@]}" exec -T postgres sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d expense -Atc "SELECT grantee, table_name, string_agg(privilege_type, '"'"','"'"') FROM information_schema.role_table_grants WHERE grantee='"'"'expense_app'"'"' GROUP BY 1,2 ORDER BY 2"'
   echo "-- role expense_exporter thuoc pg_monitor --"
-  "${DC[@]}" exec -T postgres psql -U postgres -d expense -Atc "SELECT r.rolname FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid JOIN pg_roles u ON u.oid=m.member WHERE u.rolname='expense_exporter'"
+  "${DC[@]}" exec -T postgres sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d expense -Atc "SELECT r.rolname FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid JOIN pg_roles u ON u.oid=m.member WHERE u.rolname='"'"'expense_exporter'"'"'"'
 } | tee "$OUT/hardening-checks.txt"
 
 echo "Da luu minh chung vao $OUT"
