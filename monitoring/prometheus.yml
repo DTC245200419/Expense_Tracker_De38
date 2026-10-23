@@ -1,0 +1,27 @@
+# Prometheus thu metrics theo mo hinh pull, moi 15 giay
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alert.rules.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  # Metrics container (CPU, RAM, network) tu Docker Engine
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  # Web server: stub_status cua Nginx qua nginx-prometheus-exporter
+  - job_name: nginx
+    static_configs:
+      - targets: ["nginx-exporter:9113"]
+
+  # Database: PostgreSQL qua postgres-exporter
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
