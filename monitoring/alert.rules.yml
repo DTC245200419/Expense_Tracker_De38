@@ -1,0 +1,42 @@
+groups:
+  - name: de38-expense
+    rules:
+      - alert: ExporterDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.job }} ({{ $labels.instance }}) khong scrape duoc"
+
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "postgres-exporter khong ket noi duoc PostgreSQL"
+
+      - alert: NginxDown
+        expr: nginx_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "nginx-exporter khong doc duoc stub_status cua Nginx"
+
+      - alert: HighContainerMemory
+        expr: container_memory_working_set_bytes{name=~"de38-expense-.*"} > 400 * 1024 * 1024
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} dung hon 400MB RAM"
+
+      - alert: PostgresTooManyConnections
+        expr: sum(pg_stat_database_numbackends{datname="expense"}) > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL co hon 50 ket noi dong thoi"
