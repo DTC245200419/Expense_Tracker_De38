@@ -7,7 +7,7 @@ Học phần **Triển khai & Quản trị Hệ thống Phần mềm** – Trư�
 | Sinh viên | Hoàng Văn Tâm |
 | Mã sinh viên | DTC245200419 |
 | Lớp | CNTTK23K |
-| GitHub | https://github.com/hvantam0908-netizen |
+| GitHub | https://github.com/DTC245200419/Expense_Tracker_De38 |
 
 Ứng dụng web theo dõi chi tiêu cá nhân / gia đình: **giao dịch** (thu/chi), **danh mục**, **báo cáo** theo tháng và xu hướng 6 tháng. Toàn bộ hệ thống chạy bằng **Docker Compose**, gồm ứng dụng Node.js, PostgreSQL + pgAdmin, Nginx reverse proxy (HTTPS tự ký), Prometheus + Grafana, Loki + Promtail và các biện pháp hardening.
 
