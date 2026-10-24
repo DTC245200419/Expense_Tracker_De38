@@ -8,8 +8,13 @@ const {
   Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell,
   WidthType, BorderStyle, ShadingType, ImageRun, TableOfContents, PageBreak, Footer, PageNumber,
   LevelFormat, VerticalAlign, TabStopType, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder,
-  UnderlineType,
+  UnderlineType, LeaderType,
 } = require('docx');
+
+// So trang cua tung muc (do tu ban PDF o lan build truoc) -> muc luc tinh co so trang that
+const TOC_PAGES_FILE = path.join(process.env.ROOT || '/work', 'docs/report/toc-pages.json');
+const TOC_PAGES = fs.existsSync(TOC_PAGES_FILE) ? JSON.parse(fs.readFileSync(TOC_PAGES_FILE, 'utf8')) : {};
+const HEADINGS = []; // [{level, text}] theo thu tu xuat hien
 
 const ROOT = process.env.ROOT || '/work';
 const IMG = path.join(ROOT, 'docs/evidence/images');
@@ -48,8 +53,14 @@ const Caption = (text) => new Paragraph({
   children: [new TextRun({ text, font: FONT, size: 18, color: '44546A' })],
   alignment: AlignmentType.CENTER, spacing: { before: 60, after: 200, line: 240 },
 });
-const H1 = (text) => new Paragraph({ text, heading: HeadingLevel.HEADING_1, pageBreakBefore: true, spacing: { before: 0, after: 240 } });
-const H2 = (text) => new Paragraph({ text, heading: HeadingLevel.HEADING_2, spacing: { before: 240, after: 120 } });
+const H1 = (text, opts = {}) => {
+  HEADINGS.push({ level: 1, text });
+  return new Paragraph({ text, heading: HeadingLevel.HEADING_1, pageBreakBefore: !opts.noBreak, alignment: opts.align, spacing: { before: 0, after: 240 } });
+};
+const H2 = (text) => {
+  HEADINGS.push({ level: 2, text });
+  return new Paragraph({ text, heading: HeadingLevel.HEADING_2, spacing: { before: 240, after: 120 } });
+};
 const H3 = (text) => new Paragraph({ text, heading: HeadingLevel.HEADING_3, spacing: { before: 160, after: 80 } });
 const Blank = () => new Paragraph({ children: [], spacing: { after: 0 } });
 const Break = () => new Paragraph({ children: [new PageBreak()] });
@@ -124,23 +135,24 @@ function Tbl(headers, rows, widthsCm, opts = {}) {
 // Trang bia theo khung mau: khung vien, logo ICTU, thong tin GVHD/SV ben trai
 const LOGO = path.join(ROOT, 'docs/report/logo-ictu.png');
 const coverInfo = (label, value) => new Paragraph({
-  children: runs([`${label}: `, value], { size: 26 }),
-  alignment: AlignmentType.LEFT, indent: { left: 1.2 * CM }, spacing: { before: 0, after: 40, line: 276 },
+  children: runs([`${label}: `, value], { size: 30 }),
+  alignment: AlignmentType.LEFT, indent: { left: 1.5 * CM }, spacing: { before: 0, after: 40, line: 276 },
 });
 const cover = [
   new Paragraph({
     children: [new TextRun({ text: 'TRƯỜNG ĐH CNTT & TRUYỀN THÔNG', font: FONT, size: 28, bold: true, underline: { type: UnderlineType.SINGLE } })],
-    alignment: AlignmentType.CENTER, spacing: { before: 200, after: 120 },
+    alignment: AlignmentType.CENTER, spacing: { before: 240, after: 0, line: 360 },
   }),
-  Center('KHOA CÔNG NGHỆ THÔNG TIN', { bold: true, size: 28, after: 900 }),
+  Center('KHOA CÔNG NGHỆ THÔNG TIN', { bold: true, size: 28, after: 700 }),
+  // Logo ICTU 4.4 cm (lay tu file bia goc, 512x512)
   ...(fs.existsSync(LOGO) ? [new Paragraph({
-    children: [new ImageRun({ type: 'png', data: fs.readFileSync(LOGO), transformation: { width: 170, height: 170 } })],
-    alignment: AlignmentType.CENTER, spacing: { after: 900 },
+    children: [new ImageRun({ type: 'png', data: fs.readFileSync(LOGO), transformation: { width: 166, height: 166 } })],
+    alignment: AlignmentType.CENTER, spacing: { after: 800 },
   })] : []),
-  Center('BÁO CÁO', { bold: true, size: 36, after: 240 }),
-  Center('HỌC PHẦN TRIỂN KHAI & QUẢN TRỊ HỆ THỐNG PHẦN MỀM', { bold: true, size: 28, after: 500 }),
-  Center('ĐỀ TÀI:', { bold: true, size: 30, after: 400 }),
-  Center('Hệ thống Quản lý Chi tiêu / Expense Tracker', { bold: true, size: 30, after: 1100 }),
+  Center('BÁO CÁO', { bold: true, size: 40, after: 160 }),
+  Center('HỌC PHẦN TRIỂN KHAI & QUẢN TRỊ HỆ THỐNG PHẦN MỀM', { bold: true, size: 28, after: 480 }),
+  Center('ĐỀ TÀI:', { bold: true, size: 34, after: 480 }),
+  Center('Hệ thống Quản lý Chi tiêu / Expense Tracker', { bold: true, size: 34, after: 1000 }),
   coverInfo('Giảng viên hướng dẫn', 'Lê Khánh Dương'),
   coverInfo('Sinh viên thực hiện', 'Hoàng Văn Tâm'),
   coverInfo('Mã sinh viên', 'DTC245200419'),
@@ -148,7 +160,7 @@ const cover = [
 ];
 
 const loiNoiDau = [
-  new Paragraph({ text: 'LỜI NÓI ĐẦU', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 240 } }),
+  H1('LỜI NÓI ĐẦU', { noBreak: true, align: AlignmentType.CENTER }),
   P('Báo cáo trình bày kết quả triển khai Đề 38 – Hệ thống Quản lý Chi tiêu (Expense Tracker) của sinh viên Hoàng Văn Tâm. Hệ thống là ứng dụng web theo dõi chi tiêu cá nhân và gia đình, cho phép ghi nhận giao dịch thu và chi, quản lý danh mục, xem báo cáo theo tháng và xu hướng sáu tháng gần nhất. Dữ liệu được lưu trong PostgreSQL và quản trị bằng pgAdmin. Toàn bộ dịch vụ được đóng gói bằng Docker Compose, có Nginx làm reverse proxy với HTTPS tự ký, Prometheus và Grafana giám sát container, web server và database, Loki và Promtail thu thập log tập trung, cùng nhiều lớp hardening.'),
   P('Trọng tâm của bài thực hành là chứng minh ứng dụng hoạt động cùng hạ tầng vận hành. Vì vậy, bên cạnh mã nguồn và cấu hình, báo cáo đưa vào ảnh chụp giao diện thật, lịch sử GitHub, kết quả truy vấn metrics, ba truy vấn LogQL và các phép kiểm tra bảo mật. Dữ liệu kiểm chứng được thu trong hai ngày 23 và 24 tháng 10 năm 2026 trên máy Windows 11 với Docker Desktop; các số liệu trong báo cáo là ảnh chụp tại thời điểm kiểm tra, không phải kết quả benchmark.'),
   P('Qua quá trình triển khai, ứng dụng kết nối được PostgreSQL; các thao tác thêm, sửa, xóa giao dịch được lưu vào database và đối chiếu được trong pgAdmin; Nginx phục vụ HTTPS bằng chứng chỉ tự ký; Prometheus thu thập dữ liệu từ bốn nguồn; Grafana hiển thị dashboard và truy vấn được log của Nginx và ứng dụng trong Loki. Các biện pháp hardening và quy trình backup, phục hồi được kiểm tra riêng và ghi lại kết quả.'),
@@ -158,11 +170,25 @@ const loiNoiDau = [
   new Paragraph({ children: runs(['Hoàng Văn Tâm']), alignment: AlignmentType.RIGHT, indent: { right: 1.5 * CM } }),
 ];
 
-const mucLuc = [
-  new Paragraph({ children: runs([{ text: 'MỤC LỤC', bold: true }], { size: 32 }), alignment: AlignmentType.CENTER, pageBreakBefore: true, spacing: { after: 240 } }),
-  new TableOfContents('Mục lục', { hyperlink: true, headingStyleRange: '1-2' }),
-  P([{ text: 'Mục lục được tạo tự động: nếu Word hỏi "cập nhật trường", chọn Có để hiện số trang.', italic: true }], { align: AlignmentType.LEFT, }),
-];
+// Muc luc tinh: moi muc kem so trang that (lay tu toc-pages.json, do bang LibreOffice o lan build truoc)
+function buildMucLuc() {
+  const entries = HEADINGS.map(({ level, text }) => {
+    const page = TOC_PAGES[text] !== undefined ? String(TOC_PAGES[text]) : '';
+    return new Paragraph({
+      children: [
+        new TextRun({ text, font: FONT, size: 26, bold: level === 1 }),
+        new TextRun({ text: `	${page}`, font: FONT, size: 26, bold: level === 1 }),
+      ],
+      tabStops: [{ type: TabStopType.RIGHT, position: CONTENT_W_DXA, leader: LeaderType.DOT }],
+      indent: level === 2 ? { left: 0.8 * CM } : undefined,
+      spacing: { before: level === 1 ? 80 : 0, after: 40, line: 276 },
+    });
+  });
+  return [
+    new Paragraph({ children: runs([{ text: 'MỤC LỤC', bold: true }], { size: 32 }), alignment: AlignmentType.CENTER, pageBreakBefore: true, spacing: { after: 240 } }),
+    ...entries,
+  ];
+}
 
 const phan1 = [
   H1('PHẦN 1. GIỚI THIỆU TỔNG QUAN HỆ THỐNG'),
@@ -541,7 +567,7 @@ const doc = new Document({
       },
       children: [
         ...loiNoiDau,
-        ...mucLuc, ...phan1, ...phan2, ...phan3, ...phan4, ...phan5, ...ketLuan, ...taiLieu,
+        ...buildMucLuc(), ...phan1, ...phan2, ...phan3, ...phan4, ...phan5, ...ketLuan, ...taiLieu,
       ],
     },
   ],
@@ -550,16 +576,19 @@ const doc = new Document({
 // Heading "LỜI NÓI ĐẦU" khong can page break vi da sang section moi
 doc.sections; // no-op
 
+// Danh sach heading de script build do so trang tu PDF
+fs.writeFileSync(path.join(ROOT, 'docs/report/headings.json'), JSON.stringify(HEADINGS, null, 1));
+
 Packer.toBuffer(doc).then((buf) => {
-  let target = OUT;
-  try {
-    fs.writeFileSync(target, buf);
-  } catch (err) {
-    if (err.code !== 'EACCES' && err.code !== 'EBUSY' && err.code !== 'EPERM') throw err;
-    // File dang mo trong Word -> ghi sang ten khac
-    target = OUT.replace(/\.docx$/, '_moi.docx');
-    fs.writeFileSync(target, buf);
-    console.log('File goc dang mo trong Word, da ghi sang file moi.');
+  // Neu file dang mo trong Word (bi khoa) thi ghi sang ten khac: _v2, _v3, ...
+  const candidates = [OUT, ...[2, 3, 4, 5, 6].map((i) => OUT.replace(/\.docx$/, `_v${i}.docx`))];
+  let target = null;
+  for (const c of candidates) {
+    try { fs.writeFileSync(c, buf); target = c; break; } catch (err) {
+      if (!['EACCES', 'EBUSY', 'EPERM'].includes(err.code)) throw err;
+    }
   }
+  if (!target) throw new Error('Khong ghi duoc file nao: hay dong Word roi chay lai');
+  if (target !== OUT) console.log('File goc dang mo trong Word, da ghi sang ten khac.');
   console.log('Da tao', target, `${(buf.length / 1024 / 1024).toFixed(2)} MB`);
 });
