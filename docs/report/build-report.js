@@ -293,8 +293,8 @@ const phan2 = [
   H2('2.6. Kiểm tra PostgreSQL bằng pgAdmin'),
   ...Fig('pgadmin-statistics.png', 'Hình 2.8. pgAdmin kết nối PostgreSQL và hiển thị thống kê bốn bảng của database expense'),
   P('pgAdmin được truy cập tại http://localhost:8081, server "Expense PostgreSQL (De 38)" được khai báo sẵn qua servers.json và kết nối service postgres trong mạng database. Tab Statistics cho thấy bốn bảng với số dòng thực: categories 10, transactions 18 (17 mẫu cộng 1 giao dịch thêm từ web), users 1, sessions 1. Cổng pgAdmin chỉ bind 127.0.0.1; PostgreSQL không publish cổng ra host.'),
-  ...Fig('pgadmin-query.png', 'Hình 2.9. Truy vấn JOIN trong Query Tool: giao dịch thêm trên web nằm trong PostgreSQL', { scale: 0.9 }),
-  P('Kết quả truy vấn cho thấy giao dịch "Mua máy tính" và giá trị "Tiền thuê phòng" đã sửa nằm cùng dữ liệu thật trong PostgreSQL, không chỉ tồn tại trên giao diện. Khi đăng nhập pgAdmin bằng tài khoản expense_app, các chức năng tạo hay xóa bảng bị giới hạn vì tài khoản này không có CREATE/ALTER/DROP; đây là kết quả phân quyền có chủ đích.'),
+  ...Fig('pgadmin-query.png', 'Hình 2.9. Truy vấn JOIN trong Query Tool: giao dịch thêm trên web nằm trong PostgreSQL', { scale: 0.78 }),
+  P('Kết quả cho thấy giao dịch "Mua máy tính" và giá trị "Tiền thuê phòng" đã sửa nằm trong PostgreSQL, không chỉ trên giao diện. Nếu đăng nhập pgAdmin bằng expense_app, các chức năng tạo hay xóa bảng bị giới hạn vì tài khoản không có CREATE/ALTER/DROP; đây là phân quyền có chủ đích.'),
 ];
 
 const phan3 = [
@@ -484,7 +484,7 @@ const phan5 = [
     ['Hardening 3–4 biện pháp', 'Mục 3.3, 3.4; Bảng 3.3 (9 biện pháp)'],
     ['Báo cáo và demo hoàn chỉnh', 'Bìa thông tin sinh viên, kiến trúc, ảnh thật, kiểm thử, backup, bảng lỗi'],
   ], [8, 8], { caption: 'Bảng 5.4. Đối chiếu yêu cầu đề bài' }),
-  P('Kịch bản demo bắt đầu bằng GitHub và README, chỉ rõ ba commit mốc và cấu trúc source. Tiếp theo mở website qua Nginx HTTPS, đăng nhập, thêm hoặc sửa một giao dịch và đối chiếu trong pgAdmin. Mở Prometheus Targets, xác nhận bốn job UP rồi trình bày các panel container, web và database trong Grafana. Phần log tạo một request 404 và một lần đăng nhập sai, sau đó chạy ba truy vấn LogQL trong Explore. Phần hardening trình bày UID của app, inspect mạng database và quyền của expense_app. Cuối cùng giải thích backup và phục hồi thử cùng kết quả checksum. Khi demo không mở .env, private key hoặc cửa sổ có mật khẩu lên màn hình.'),
+  P('Kịch bản demo: GitHub và README với ba commit mốc; website qua HTTPS, đăng nhập, thêm hoặc sửa một giao dịch rồi đối chiếu trong pgAdmin; Prometheus Targets bốn job UP và dashboard Grafana; tạo một request 404 và một lần đăng nhập sai rồi chạy ba truy vấn LogQL; UID của app, inspect mạng database và quyền của expense_app; cuối cùng là backup, phục hồi thử và checksum. Khi demo không mở .env, private key hay cửa sổ có mật khẩu.'),
 ];
 
 const ketLuan = [
