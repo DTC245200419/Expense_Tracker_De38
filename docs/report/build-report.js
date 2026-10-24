@@ -7,7 +7,8 @@ const path = require('path');
 const {
   Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell,
   WidthType, BorderStyle, ShadingType, ImageRun, TableOfContents, PageBreak, Footer, PageNumber,
-  LevelFormat, VerticalAlign, TabStopType,
+  LevelFormat, VerticalAlign, TabStopType, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder,
+  UnderlineType,
 } = require('docx');
 
 const ROOT = process.env.ROOT || '/work';
@@ -120,30 +121,30 @@ function Tbl(headers, rows, widthsCm, opts = {}) {
 }
 
 // ---------- NOI DUNG ----------
+// Trang bia theo khung mau: khung vien, logo ICTU, thong tin GVHD/SV ben trai
+const LOGO = path.join(ROOT, 'docs/report/logo-ictu.png');
+const coverInfo = (label, value) => new Paragraph({
+  children: runs([`${label}: `, value], { size: 26 }),
+  alignment: AlignmentType.LEFT, indent: { left: 1.2 * CM }, spacing: { before: 0, after: 40, line: 276 },
+});
 const cover = [
-  Center('TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG', { bold: true, size: 28 }),
-  Center('KHOA CÔNG NGHỆ THÔNG TIN', { bold: true, size: 28, after: 1800 }),
-  Center('BÁO CÁO', { bold: true, size: 40, after: 200 }),
-  Center('HỌC PHẦN TRIỂN KHAI & QUẢN TRỊ HỆ THỐNG PHẦN MỀM', { bold: true, size: 30, after: 900 }),
-  Center('Đề tài:', { bold: true, size: 28, after: 100 }),
-  Center('ĐỀ 38 – HỆ THỐNG QUẢN LÝ CHI TIÊU / EXPENSE TRACKER', { bold: true, size: 32, after: 1800 }),
   new Paragraph({
-    children: runs([{ text: 'Sinh viên thực hiện:\t', bold: true }, 'Hoàng Văn Tâm'], { size: 28 }),
-    tabStops: [{ type: TabStopType.LEFT, position: 9 * CM }], indent: { left: 3.5 * CM }, spacing: { after: 160 },
+    children: [new TextRun({ text: 'TRƯỜNG ĐH CNTT & TRUYỀN THÔNG', font: FONT, size: 28, bold: true, underline: { type: UnderlineType.SINGLE } })],
+    alignment: AlignmentType.CENTER, spacing: { before: 200, after: 120 },
   }),
-  new Paragraph({
-    children: runs([{ text: 'Mã sinh viên:\t', bold: true }, 'DTC245200419'], { size: 28 }),
-    tabStops: [{ type: TabStopType.LEFT, position: 9 * CM }], indent: { left: 3.5 * CM }, spacing: { after: 160 },
-  }),
-  new Paragraph({
-    children: runs([{ text: 'Lớp:\t', bold: true }, 'CNTTK23K'], { size: 28 }),
-    tabStops: [{ type: TabStopType.LEFT, position: 9 * CM }], indent: { left: 3.5 * CM }, spacing: { after: 160 },
-  }),
-  new Paragraph({
-    children: runs([{ text: 'Giảng viên hướng dẫn:\t', bold: true }, 'Nguyễn Anh Chuyên'], { size: 28 }),
-    tabStops: [{ type: TabStopType.LEFT, position: 9 * CM }], indent: { left: 3.5 * CM }, spacing: { after: 2400 },
-  }),
-  Center('THÁI NGUYÊN, NĂM 2026', { bold: true, size: 28 }),
+  Center('KHOA CÔNG NGHỆ THÔNG TIN', { bold: true, size: 28, after: 900 }),
+  ...(fs.existsSync(LOGO) ? [new Paragraph({
+    children: [new ImageRun({ type: 'png', data: fs.readFileSync(LOGO), transformation: { width: 170, height: 170 } })],
+    alignment: AlignmentType.CENTER, spacing: { after: 900 },
+  })] : []),
+  Center('BÁO CÁO', { bold: true, size: 36, after: 240 }),
+  Center('HỌC PHẦN TRIỂN KHAI & QUẢN TRỊ HỆ THỐNG PHẦN MỀM', { bold: true, size: 28, after: 500 }),
+  Center('ĐỀ TÀI:', { bold: true, size: 30, after: 400 }),
+  Center('Hệ thống Quản lý Chi tiêu / Expense Tracker', { bold: true, size: 30, after: 1100 }),
+  coverInfo('Giảng viên hướng dẫn', 'Lê Khánh Dương'),
+  coverInfo('Sinh viên thực hiện', 'Hoàng Văn Tâm'),
+  coverInfo('Mã sinh viên', 'DTC245200419'),
+  coverInfo('Lớp', 'CNTT K23K'),
 ];
 
 const loiNoiDau = [
@@ -151,7 +152,7 @@ const loiNoiDau = [
   P('Báo cáo trình bày kết quả triển khai Đề 38 – Hệ thống Quản lý Chi tiêu (Expense Tracker) của sinh viên Hoàng Văn Tâm. Hệ thống là ứng dụng web theo dõi chi tiêu cá nhân và gia đình, cho phép ghi nhận giao dịch thu và chi, quản lý danh mục, xem báo cáo theo tháng và xu hướng sáu tháng gần nhất. Dữ liệu được lưu trong PostgreSQL và quản trị bằng pgAdmin. Toàn bộ dịch vụ được đóng gói bằng Docker Compose, có Nginx làm reverse proxy với HTTPS tự ký, Prometheus và Grafana giám sát container, web server và database, Loki và Promtail thu thập log tập trung, cùng nhiều lớp hardening.'),
   P('Trọng tâm của bài thực hành là chứng minh ứng dụng hoạt động cùng hạ tầng vận hành. Vì vậy, bên cạnh mã nguồn và cấu hình, báo cáo đưa vào ảnh chụp giao diện thật, lịch sử GitHub, kết quả truy vấn metrics, ba truy vấn LogQL và các phép kiểm tra bảo mật. Dữ liệu kiểm chứng được thu trong hai ngày 23 và 24 tháng 10 năm 2026 trên máy Windows 11 với Docker Desktop; các số liệu trong báo cáo là ảnh chụp tại thời điểm kiểm tra, không phải kết quả benchmark.'),
   P('Qua quá trình triển khai, ứng dụng kết nối được PostgreSQL; các thao tác thêm, sửa, xóa giao dịch được lưu vào database và đối chiếu được trong pgAdmin; Nginx phục vụ HTTPS bằng chứng chỉ tự ký; Prometheus thu thập dữ liệu từ bốn nguồn; Grafana hiển thị dashboard và truy vấn được log của Nginx và ứng dụng trong Loki. Các biện pháp hardening và quy trình backup, phục hồi được kiểm tra riêng và ghi lại kết quả.'),
-  P('Em xin cảm ơn thầy Nguyễn Anh Chuyên đã hướng dẫn học phần Triển khai và Quản trị hệ thống phần mềm. Thông qua đề tài, em có cơ hội hệ thống hóa quy trình từ đóng gói ứng dụng, triển khai dịch vụ, giám sát, thu thập log đến kiểm tra kết quả và trình bày minh chứng. Những giới hạn còn tồn tại được nêu rõ trong phần kết luận.'),
+  P('Em xin cảm ơn thầy Lê Khánh Dương đã hướng dẫn học phần Triển khai và Quản trị hệ thống phần mềm. Thông qua đề tài, em có cơ hội hệ thống hóa quy trình từ đóng gói ứng dụng, triển khai dịch vụ, giám sát, thu thập log đến kiểm tra kết quả và trình bày minh chứng. Những giới hạn còn tồn tại được nêu rõ trong phần kết luận.'),
   Blank(),
   new Paragraph({ children: runs([{ text: 'Sinh viên thực hiện', bold: true }]), alignment: AlignmentType.RIGHT, indent: { right: 1.5 * CM } }),
   new Paragraph({ children: runs(['Hoàng Văn Tâm']), alignment: AlignmentType.RIGHT, indent: { right: 1.5 * CM } }),
@@ -515,7 +516,20 @@ const doc = new Document({
   },
   sections: [
     {
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 2 * CM, bottom: 2 * CM, left: 3 * CM, right: 1.5 * CM } } },
+      properties: {
+        page: {
+          size: { width: 11906, height: 16838 },
+          margin: { top: 2 * CM, bottom: 2 * CM, left: 3 * CM, right: 1.5 * CM },
+          // Khung vien trang bia (giong khung mau)
+          borders: {
+            pageBorders: { display: PageBorderDisplay.ALL_PAGES, offsetFrom: PageBorderOffsetFrom.PAGE, zOrder: PageBorderZOrder.FRONT },
+            pageBorderTop: { style: BorderStyle.SINGLE, size: 8, color: '000000', space: 24 },
+            pageBorderBottom: { style: BorderStyle.SINGLE, size: 8, color: '000000', space: 24 },
+            pageBorderLeft: { style: BorderStyle.SINGLE, size: 8, color: '000000', space: 24 },
+            pageBorderRight: { style: BorderStyle.SINGLE, size: 8, color: '000000', space: 24 },
+          },
+        },
+      },
       children: cover,
     },
     {
