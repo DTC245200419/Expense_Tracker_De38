@@ -6,18 +6,11 @@
   <% } %>
   <form method="post" action="/transactions/<%= item.id %>" class="form">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <div class="row">
-      <label>Loại
-        <select name="kind">
-          <option value="expense" <%= item.kind === 'expense' ? 'selected' : '' %>>Chi</option>
-          <option value="income" <%= item.kind === 'income' ? 'selected' : '' %>>Thu</option>
-        </select>
-      </label>
-      <label>Ngày
-        <input type="date" name="occurred_on" value="<%= String(item.occurred_on || '').slice(0, 10) %>" required>
-      </label>
-    </div>
-    <label>Danh mục
+    <input type="hidden" name="kind" value="<%= item.kind || 'expense' %>">
+    <label>Ngày
+      <input type="date" name="occurred_on" value="<%= String(item.occurred_on || '').slice(0, 10) %>" required>
+    </label>
+    <label>Danh mục (loại Thu/Chi lấy theo danh mục)
       <select name="category_id" required>
         <% categories.forEach(c => { %>
           <option value="<%= c.id %>" <%= Number(item.category_id) === c.id ? 'selected' : '' %>><%= kindLabel(c.kind) %> · <%= c.name %></option>

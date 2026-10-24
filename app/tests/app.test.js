@@ -31,6 +31,7 @@ function createFakeRepo() {
     async createUser() { throw new Error('not used'); },
     async updatePassword(id, hash) { users.find((x) => x.id === id).password_hash = hash; },
     async listCategories() { return categories; },
+    async getCategory(id) { return categories.find((c) => c.id === id) || null; },
     async createCategory(c) { const id = categories.length + 1; categories.push({ id, ...c }); return { id }; },
     async deleteCategory(id) {
       if (transactions.some((t) => t.category_id === id)) { const e = new Error('fk'); e.code = '23503'; throw e; }

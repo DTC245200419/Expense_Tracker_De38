@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Kiến trúc hệ thống Đề 38</title>
+<style>
+  body { margin: 0; background: #fff; font-family: "Segoe UI", Arial, sans-serif; }
+  svg { display: block; }
+  .box { fill: #fff; stroke: #1f2937; stroke-width: 1.5; rx: 8; }
+  .title { font-size: 15px; font-weight: 700; fill: #111827; }
+  .sub { font-size: 12px; fill: #4b5563; }
+  .net { fill-opacity: 0.08; stroke-width: 1.5; stroke-dasharray: 6 4; rx: 12; }
+  .netlabel { font-size: 13px; font-weight: 700; }
+  .arrow { stroke: #374151; stroke-width: 2; fill: none; marker-end: url(#arr); }
+  .arrow-m { stroke: #b45309; stroke-width: 2; fill: none; marker-end: url(#arr-m); stroke-dasharray: 5 3; }
+  .arrow-l { stroke: #0e7490; stroke-width: 2; fill: none; marker-end: url(#arr-l); stroke-dasharray: 2 3; }
+  .lbl { font-size: 11px; fill: #374151; }
+  .host { fill: #f3f4f6; stroke: #9ca3af; stroke-width: 1.5; rx: 10; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="720" viewBox="0 0 1240 720">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#374151"/></marker>
+    <marker id="arr-m" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b45309"/></marker>
+    <marker id="arr-l" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0e7490"/></marker>
+  </defs>
+
+  <!-- Host -->
+  <rect x="20" y="20" width="200" height="130" class="host"/>
+  <text x="120" y="48" text-anchor="middle" class="title">Máy host (Windows)</text>
+  <text x="120" y="70" text-anchor="middle" class="sub">Trình duyệt / curl</text>
+  <text x="120" y="92" text-anchor="middle" class="sub">Chỉ bind 127.0.0.1</text>
+  <text x="120" y="112" text-anchor="middle" class="sub">8080 · 8443 · 8081</text>
+  <text x="120" y="132" text-anchor="middle" class="sub">9090 · 3000</text>
+
+  <!-- Docker Compose boundary -->
+  <rect x="250" y="20" width="970" height="680" fill="none" stroke="#111827" stroke-width="2" rx="14"/>
+  <text x="270" y="46" class="title">Docker Compose · project de38-expense</text>
+
+  <!-- Network web -->
+  <rect x="270" y="70" width="420" height="200" class="net" fill="#2563eb" stroke="#2563eb"/>
+  <text x="285" y="92" class="netlabel" fill="#1d4ed8">mạng web</text>
+
+  <rect x="290" y="110" width="170" height="130" class="box"/>
+  <text x="375" y="135" text-anchor="middle" class="title">Nginx</text>
+  <text x="375" y="155" text-anchor="middle" class="sub">nginx-unprivileged 1.28</text>
+  <text x="375" y="173" text-anchor="middle" class="sub">Reverse proxy, TLS tự ký</text>
+  <text x="375" y="191" text-anchor="middle" class="sub">Security headers</text>
+  <text x="375" y="209" text-anchor="middle" class="sub">:8080 → 301 → :8443</text>
+  <text x="375" y="227" text-anchor="middle" class="sub">stub_status :8082 (nội bộ)</text>
+
+  <rect x="500" y="110" width="170" height="130" class="box"/>
+  <text x="585" y="135" text-anchor="middle" class="title">app</text>
+  <text x="585" y="155" text-anchor="middle" class="sub">Node.js 24 · Express · EJS</text>
+  <text x="585" y="173" text-anchor="middle" class="sub">Expense Tracker :3000</text>
+  <text x="585" y="191" text-anchor="middle" class="sub">user node, read-only rootfs</text>
+  <text x="585" y="209" text-anchor="middle" class="sub">scrypt · CSRF · rate limit</text>
+  <text x="585" y="227" text-anchor="middle" class="sub">Ghi app.log JSON</text>
+
+  <!-- Network database (internal) -->
+  <rect x="270" y="300" width="420" height="200" class="net" fill="#059669" stroke="#059669"/>
+  <text x="285" y="322" class="netlabel" fill="#047857">mạng database (internal: true)</text>
+
+  <rect x="290" y="345" width="170" height="130" class="box"/>
+  <text x="375" y="370" text-anchor="middle" class="title">PostgreSQL 17</text>
+  <text x="375" y="390" text-anchor="middle" class="sub">users · categories</text>
+  <text x="375" y="408" text-anchor="middle" class="sub">transactions · sessions</text>
+  <text x="375" y="426" text-anchor="middle" class="sub">Không publish cổng 5432</text>
+  <text x="375" y="444" text-anchor="middle" class="sub">role expense_app (CRUD)</text>
+  <text x="375" y="462" text-anchor="middle" class="sub">role expense_exporter (pg_monitor)</text>
+
+  <rect x="500" y="345" width="170" height="130" class="box"/>
+  <text x="585" y="370" text-anchor="middle" class="title">pgAdmin 4</text>
+  <text x="585" y="390" text-anchor="middle" class="sub">dpage/pgadmin4 9.2</text>
+  <text x="585" y="408" text-anchor="middle" class="sub">Quản trị database</text>
+  <text x="585" y="426" text-anchor="middle" class="sub">127.0.0.1:8081</text>
+  <text x="585" y="444" text-anchor="middle" class="sub">+ mạng management</text>
+  <text x="585" y="462" text-anchor="middle" class="sub">để publish cổng</text>
+
+  <!-- Network monitoring -->
+  <rect x="720" y="70" width="480" height="610" class="net" fill="#d97706" stroke="#d97706"/>
+  <text x="735" y="92" class="netlabel" fill="#b45309">mạng monitoring</text>
+
+  <rect x="740" y="110" width="200" height="90" class="box"/>
+  <text x="840" y="135" text-anchor="middle" class="title">cAdvisor 0.55</text>
+  <text x="840" y="155" text-anchor="middle" class="sub">CPU · RAM · network</text>
+  <text x="840" y="173" text-anchor="middle" class="sub">của từng container</text>
+
+  <rect x="740" y="215" width="200" height="75" class="box"/>
+  <text x="840" y="240" text-anchor="middle" class="title">nginx-exporter</text>
+  <text x="840" y="260" text-anchor="middle" class="sub">đọc stub_status → :9113</text>
+
+  <rect x="740" y="305" width="200" height="75" class="box"/>
+  <text x="840" y="330" text-anchor="middle" class="title">postgres-exporter</text>
+  <text x="840" y="350" text-anchor="middle" class="sub">pg_stat_database → :9187</text>
+
+  <rect x="980" y="110" width="200" height="120" class="box"/>
+  <text x="1080" y="135" text-anchor="middle" class="title">Prometheus 3.2</text>
+  <text x="1080" y="155" text-anchor="middle" class="sub">scrape 15s · retention 7d</text>
+  <text x="1080" y="173" text-anchor="middle" class="sub">alert rules</text>
+  <text x="1080" y="191" text-anchor="middle" class="sub">127.0.0.1:9090</text>
+
+  <rect x="980" y="260" width="200" height="120" class="box"/>
+  <text x="1080" y="285" text-anchor="middle" class="title">Grafana 11.6</text>
+  <text x="1080" y="305" text-anchor="middle" class="sub">Dashboard (PromQL)</text>
+  <text x="1080" y="323" text-anchor="middle" class="sub">Explore (LogQL)</text>
+  <text x="1080" y="341" text-anchor="middle" class="sub">127.0.0.1:3000</text>
+
+  <rect x="740" y="430" width="200" height="110" class="box"/>
+  <text x="840" y="455" text-anchor="middle" class="title">Promtail 3.4</text>
+  <text x="840" y="475" text-anchor="middle" class="sub">đọc volume log (:ro)</text>
+  <text x="840" y="493" text-anchor="middle" class="sub">job=nginx · nginx-error · app</text>
+  <text x="840" y="511" text-anchor="middle" class="sub">parse JSON, timestamp</text>
+
+  <rect x="980" y="430" width="200" height="110" class="box"/>
+  <text x="1080" y="455" text-anchor="middle" class="title">Loki 3.4</text>
+  <text x="1080" y="475" text-anchor="middle" class="sub">TSDB v13 · filesystem</text>
+  <text x="1080" y="493" text-anchor="middle" class="sub">retention 7 ngày</text>
+  <text x="1080" y="511" text-anchor="middle" class="sub">không publish cổng</text>
+
+  <!-- Volumes -->
+  <rect x="270" y="530" width="420" height="150" class="host"/>
+  <text x="480" y="555" text-anchor="middle" class="title">Named volumes</text>
+  <text x="480" y="580" text-anchor="middle" class="sub">postgres_data · pgadmin_data · app_logs · nginx_logs</text>
+  <text x="480" y="600" text-anchor="middle" class="sub">prometheus_data · grafana_data · loki_data · promtail_positions</text>
+  <text x="480" y="625" text-anchor="middle" class="sub">init-perms / init-logging (busybox) chown quyền rồi thoát</text>
+  <text x="480" y="645" text-anchor="middle" class="sub">Dữ liệu giữ nguyên khi container restart / rebuild</text>
+
+  <!-- Arrows: user flow -->
+  <path d="M220,85 L290,160" class="arrow"/>
+  <text x="222" y="118" class="lbl">HTTP/HTTPS</text>
+  <path d="M460,175 L500,175" class="arrow"/>
+  <text x="462" y="168" class="lbl">proxy_pass</text>
+  <path d="M585,240 L585,300 L420,300 L420,345" class="arrow"/>
+  <text x="430" y="292" class="lbl">SQL (pg, tham số hoá)</text>
+  <path d="M500,410 L460,410" class="arrow"/>
+  <path d="M220,120 L250,120 L250,290 L585,290 L585,345" class="arrow"/>
+
+  <!-- Arrows: monitoring -->
+  <path d="M460,232 L740,232" class="arrow-m"/>
+  <text x="600" y="250" class="lbl">GET /stub_status</text>
+  <path d="M460,445 L700,445 L700,342 L740,342" class="arrow-m"/>
+  <text x="615" y="470" class="lbl">pg_stat (exporter)</text>
+  <path d="M940,155 L980,155" class="arrow-m"/>
+  <path d="M940,252 L960,252 L960,170 L980,170" class="arrow-m"/>
+  <path d="M940,342 L960,342 L960,185 L980,185" class="arrow-m"/>
+  <path d="M1080,230 L1080,260" class="arrow-m"/>
+  <text x="1090" y="250" class="lbl">PromQL</text>
+
+  <!-- Arrows: logging -->
+  <path d="M690,600 L720,600 L720,485 L740,485" class="arrow-l"/>
+  <text x="600" y="665" class="lbl">app.log · access.log · error.log</text>
+  <path d="M940,485 L980,485" class="arrow-l"/>
+  <text x="945" y="478" class="lbl">push</text>
+  <path d="M1080,430 L1080,380" class="arrow-l"/>
+  <text x="1090" y="410" class="lbl">LogQL</text>
+
+  <!-- Legend -->
+  <text x="270" y="705" class="lbl">— Luồng người dùng   - - Luồng metrics (Prometheus kéo)   · · Luồng log (Promtail đẩy)</text>
+</svg>
+</body>
+</html>

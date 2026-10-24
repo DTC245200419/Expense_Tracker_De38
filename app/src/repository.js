@@ -60,6 +60,11 @@ function createRepository(pool) {
       return rows;
     },
 
+    async getCategory(id) {
+      const { rows } = await pool.query('SELECT id, name, kind, color FROM categories WHERE id = $1', [id]);
+      return rows[0] || null;
+    },
+
     async createCategory({ name, kind, color }) {
       const { rows } = await pool.query(
         `INSERT INTO categories (name, kind, color) VALUES ($1, $2, $3)

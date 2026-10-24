@@ -263,9 +263,21 @@ function createApp({ repo, logger, config, sessionStore }) {
     }
   });
 
+  // Loai thu/chi luon lay theo danh muc de tranh nhap lech (vi du chon danh muc Luong nhung loai Chi)
+  async function applyCategoryKind(value, errors) {
+    if (!Number.isInteger(value.categoryId)) return;
+    const category = await repo.getCategory(value.categoryId);
+    if (!category) {
+      errors.push('Danh mục không tồn tại.');
+      return;
+    }
+    value.kind = category.kind;
+  }
+
   app.post('/transactions', requireAuth, async (req, res, next) => {
     try {
       const { errors, value } = validateTransaction(req.body);
+      if (!errors.length) await applyCategoryKind(value, errors);
       if (errors.length) {
         setFlash(req, 'error', errors.join(' '));
         return res.redirect('/transactions');
@@ -301,6 +313,7 @@ function createApp({ repo, logger, config, sessionStore }) {
       const id = parseId(req.params.id);
       if (!id) return notFound(req, res);
       const { errors, value } = validateTransaction(req.body);
+      if (!errors.length) await applyCategoryKind(value, errors);
       if (errors.length) {
         const categories = await repo.listCategories();
         return res.status(400).render('transaction_edit', {
