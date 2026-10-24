@@ -15,9 +15,10 @@ const IMG = path.join(ROOT, 'docs/evidence/images');
 const OUT = path.join(ROOT, 'docs/report/Bao_cao_De38_Hoang_Van_Tam_DTC245200419.docx');
 
 const FONT = 'Times New Roman';
-const SZ = 26; // 13pt than van ban
+const SZ = 26; // 13pt than van ban (giong file mau)
 const CM = 567; // 1 cm = 567 DXA
-const CONTENT_W_CM = 16; // A4 21cm - le trai 3 - le phai 2
+const CONTENT_W_CM = 16.5; // A4 21cm - le trai 3 - le phai 1.5 (giong file mau)
+const FIG_MAX_H_PX = 360; // ~9.5 cm, chieu cao anh toi da (file mau 9.6-11.3 cm)
 const CONTENT_W_DXA = CONTENT_W_CM * CM;
 const CONTENT_W_PX = Math.round((CONTENT_W_CM / 2.54) * 96); // ~605px
 
@@ -34,12 +35,17 @@ function runs(parts, base = {}) {
 }
 const P = (parts, opts = {}) => new Paragraph({
   children: runs(parts), alignment: opts.align || AlignmentType.JUSTIFIED,
-  spacing: { after: opts.after ?? 120, line: 312 }, indent: opts.noIndent ? undefined : { firstLine: 0.8 * CM },
+  spacing: { before: 0, after: opts.after ?? 100, line: 252 }, // file mau: doan van gian dong don
   ...opts.extra,
 });
 const Center = (text, opts = {}) => new Paragraph({
   children: runs([{ text, bold: opts.bold, italic: opts.italic }], opts.size ? { size: opts.size } : {}),
   alignment: AlignmentType.CENTER, spacing: { after: opts.after ?? 120, line: 312 },
+});
+// Chu thich hinh/bang giong style Caption cua file mau: 9pt, mau 44546A, canh giua, keepNext
+const Caption = (text) => new Paragraph({
+  children: [new TextRun({ text, font: FONT, size: 18, color: '44546A' })],
+  alignment: AlignmentType.CENTER, spacing: { before: 60, after: 200, line: 240 },
 });
 const H1 = (text) => new Paragraph({ text, heading: HeadingLevel.HEADING_1, pageBreakBefore: true, spacing: { before: 0, after: 240 } });
 const H2 = (text) => new Paragraph({ text, heading: HeadingLevel.HEADING_2, spacing: { before: 240, after: 120 } });
@@ -54,10 +60,9 @@ const Bullets = (items) => items.map((it) => new Paragraph({
 
 function Code(lines) {
   return lines.map((l, i) => new Paragraph({
-    children: [new TextRun({ text: l, font: 'Consolas', size: 20 })],
-    shading: { type: ShadingType.CLEAR, fill: 'F3F4F6' },
-    spacing: { after: i === lines.length - 1 ? 160 : 0, line: 260 },
-    indent: { left: 0.4 * CM, right: 0.4 * CM },
+    children: [new TextRun({ text: l, font: 'Consolas', size: 18 })],
+    shading: { type: ShadingType.CLEAR, fill: 'F2F2F2' },
+    spacing: { before: i === 0 ? 80 : 0, after: i === lines.length - 1 ? 140 : 0, line: 252 },
   }));
 }
 
@@ -68,20 +73,20 @@ function Fig(file, caption, opts = {}) {
   const full = path.join(IMG, file);
   if (!fs.existsSync(full)) {
     console.warn('THIEU ANH:', full);
-    return [P([{ text: `[Thiếu ảnh ${file}]`, italic: true }], { align: AlignmentType.CENTER, noIndent: true }), Center(caption, { italic: true })];
+    return [P([{ text: `[Thiếu ảnh ${file}]`, italic: true }], { align: AlignmentType.CENTER }), Caption(caption)];
   }
   const buf = fs.readFileSync(full);
   const { w, h } = pngSize(buf);
   const maxW = Math.round(CONTENT_W_PX * (opts.scale || 1));
-  const maxH = opts.maxH || 760;
+  const maxH = opts.maxH || FIG_MAX_H_PX;
   let width = maxW; let height = Math.round((h / w) * width);
   if (height > maxH) { height = maxH; width = Math.round((w / h) * height); }
   return [
     new Paragraph({
       children: [new ImageRun({ type: 'png', data: buf, transformation: { width, height } })],
-      alignment: AlignmentType.CENTER, spacing: { before: 120, after: 60 },
+      alignment: AlignmentType.CENTER, spacing: { before: 120, after: 0 }, keepNext: true,
     }),
-    Center(caption, { italic: true, after: 200 }),
+    Caption(caption),
   ];
 }
 
@@ -90,8 +95,8 @@ const borders = { top: border, bottom: border, left: border, right: border };
 function cell(parts, width, opts = {}) {
   return new TableCell({
     children: [new Paragraph({
-      children: runs(parts, { size: SZ - 2, bold: opts.bold }), alignment: opts.align || AlignmentType.LEFT,
-      spacing: { after: 0, line: 276 },
+      children: runs(parts, { size: 21, bold: opts.bold }), alignment: opts.align || AlignmentType.LEFT,
+      spacing: { before: 0, after: 0, line: 252 },
     })],
     width: { size: width, type: WidthType.DXA }, borders,
     shading: opts.fill ? { type: ShadingType.CLEAR, fill: opts.fill } : undefined,
@@ -109,8 +114,8 @@ function Tbl(headers, rows, widthsCm, opts = {}) {
     ],
   });
   const out = [t];
-  if (opts.caption) out.push(Center(opts.caption, { italic: true, after: 200 }));
-  else out.push(new Paragraph({ children: [], spacing: { after: 160 } }));
+  if (opts.caption) out.push(Caption(opts.caption));
+  else out.push(new Paragraph({ children: [], spacing: { after: 120 } }));
   return out;
 }
 
@@ -155,7 +160,7 @@ const loiNoiDau = [
 const mucLuc = [
   new Paragraph({ children: runs([{ text: 'MỤC LỤC', bold: true }], { size: 32 }), alignment: AlignmentType.CENTER, pageBreakBefore: true, spacing: { after: 240 } }),
   new TableOfContents('Mục lục', { hyperlink: true, headingStyleRange: '1-2' }),
-  P([{ text: 'Mục lục được tạo tự động: nếu Word hỏi "cập nhật trường", chọn Có để hiện số trang.', italic: true }], { align: AlignmentType.LEFT, noIndent: true }),
+  P([{ text: 'Mục lục được tạo tự động: nếu Word hỏi "cập nhật trường", chọn Có để hiện số trang.', italic: true }], { align: AlignmentType.LEFT, }),
 ];
 
 const phan1 = [
@@ -181,7 +186,7 @@ const phan1 = [
   ...Fig('h1-1-kien-truc.png', 'Hình 1.1. Kiến trúc hệ thống theo các file Docker Compose và bốn mạng bridge'),
   P('Luồng truy cập bắt đầu từ trình duyệt tới Nginx. Khi bật TLS, yêu cầu HTTP ở cổng 8080 được chuyển hướng 301 sang HTTPS 8443. Nginx chuyển tiếp request tới app:3000 trong mạng web kèm các header X-Forwarded-For và X-Forwarded-Proto. Express xác định route, kiểm tra phiên đăng nhập và CSRF token nếu là thao tác ghi, kiểm tra dữ liệu đầu vào rồi gọi repository thực hiện truy vấn SQL tham số hóa tới PostgreSQL trong mạng database. Kết quả được render bằng EJS và trả về qua Nginx.'),
   P('Luồng metrics tách khỏi luồng người dùng. Prometheus scrape cAdvisor, nginx-exporter, postgres-exporter và chính nó mỗi 15 giây. cAdvisor đọc cgroup của Docker Engine để lấy CPU, RAM, network của từng container; nginx-exporter đọc stub_status của Nginx qua cổng 8082 nội bộ; postgres-exporter đăng nhập PostgreSQL bằng tài khoản chỉ có quyền pg_monitor để đọc pg_stat_database. Grafana lấy dữ liệu từ Prometheus bằng PromQL.'),
-  P('Luồng logging bắt đầu từ file app.log của ứng dụng và access.log, error.log của Nginx trên hai named volume. Promtail mount các volume này ở chế độ chỉ đọc, parse JSON, gắn nhãn job và gửi tới Loki qua mạng monitoring. Grafana Explore truy vấn Loki bằng LogQL. Promtail không cần Docker socket vì chỉ đọc file log, nhờ đó giảm bề mặt tấn công.'),
+  P('Luồng logging bắt đầu từ file app.log của ứng dụng và access.log, error.log của Nginx trên hai named volume; Promtail đọc các file này ở chế độ chỉ đọc và đẩy lên Loki, Grafana Explore truy vấn bằng LogQL (chi tiết ở mục 4.3).'),
 
   H2('1.4. Các dịch vụ, mạng và dữ liệu lưu trữ'),
   ...Tbl(['Dịch vụ', 'Image', 'Cổng host', 'Vai trò'], [
@@ -206,10 +211,9 @@ const phan2 = [
   H1('PHẦN 2. QUẢN LÝ MÃ NGUỒN VÀ TRIỂN KHAI'),
   H2('2.1. Repository và cấu trúc mã nguồn'),
   P('Mã nguồn được quản lý tại repository công khai của tài khoản GitHub DTC245200419, đặt theo mã sinh viên như đề yêu cầu. Source ứng dụng, Dockerfile, schema khởi tạo, bốn file Compose, cấu hình Nginx, Prometheus, Grafana, Loki, Promtail, scripts vận hành và minh chứng đều nằm trong repository. README hướng dẫn sinh secrets, chạy theo giai đoạn, truy cập dịch vụ, kiểm tra kết quả và bảng lỗi đã gặp.'),
-  P([{ text: 'https://github.com/DTC245200419/Expense_Tracker_De38', bold: true }], { align: AlignmentType.CENTER, noIndent: true }),
+  P([{ text: 'https://github.com/DTC245200419/Expense_Tracker_De38', bold: true }], { align: AlignmentType.CENTER, }),
   ...Fig('h2-1-github-repo.png', 'Hình 2.1. Repository Expense_Tracker_De38 trên GitHub'),
-  P('Thư mục app chứa server Express (src), các view EJS (views), CSS (public) và tests. Thư mục db/init chứa schema cùng script tạo tài khoản PostgreSQL. Thư mục nginx chứa nginx.conf, cấu hình HTTP và TLS. Thư mục monitoring chứa cấu hình scrape, alert rules và provisioning dashboard Grafana. Thư mục logging quản lý Loki, Promtail và datasource. Thư mục scripts chứa setup, compose wrapper, tls, smoke test, backup, restore-test, make-traffic, evidence và screenshots. Minh chứng text và ảnh được lưu trong docs/evidence.'),
-  P('File .gitignore loại trừ .env, private key trong certs, backup SQL, node_modules, file log và thư mục tạm. Những file này chứa mật khẩu hoặc dữ liệu vận hành nên không nằm trong lịch sử GitHub. Mật khẩu không được chụp trong ảnh hoặc ghi vào báo cáo.'),
+  P('Thư mục app chứa server Express (src), các view EJS (views), CSS (public) và tests. Thư mục db/init chứa schema cùng script tạo tài khoản PostgreSQL; nginx chứa cấu hình HTTP và TLS; monitoring chứa cấu hình scrape, alert rules và provisioning Grafana; logging chứa Loki, Promtail và datasource; scripts chứa setup, compose wrapper, tls, smoke test, backup, restore-test, make-traffic, evidence và screenshots; docs/evidence lưu minh chứng. File .gitignore loại trừ .env, private key, backup SQL, node_modules và file log vì chúng chứa mật khẩu hoặc dữ liệu vận hành.'),
 
   H2('2.2. Ba commit mốc và quy trình quản lý thay đổi'),
   ...Tbl(['Mốc', 'Hash', 'Nội dung chính'], [
@@ -238,7 +242,7 @@ const phan2 = [
     'sh scripts/tls.sh && sh scripts/compose.sh tls up -d   # bat HTTPS tu ky',
   ]),
   P('PostgreSQL có healthcheck pg_isready. App chỉ khởi động sau khi database healthy và init-perms đã chuẩn bị quyền volume (depends_on với condition service_healthy và service_completed_successfully). Nginx chờ app healthy. Trong lần thực nghiệm, 11 container ở trạng thái Up, các dịch vụ có healthcheck đều healthy, hai container init Exited (0).'),
-  ...Fig('compose-ps-terminal.png', 'Hình 2.3. Kết quả docker compose up và ps -a trong Git Bash', { scale: 0.85, maxH: 620 }),
+  ...Fig('compose-ps-terminal.png', 'Hình 2.3. Kết quả docker compose up và ps -a trong Git Bash', { scale: 0.8, maxH: 400 }),
 
   H2('2.4. Cơ sở dữ liệu của ứng dụng'),
   ...Tbl(['Bảng', 'Nội dung lưu trữ'], [
@@ -250,13 +254,13 @@ const phan2 = [
   P('Schema và dữ liệu mẫu (10 danh mục, 17 giao dịch của ba tháng gần nhất) được tạo tự động lần đầu bởi entrypoint của PostgreSQL. Script 02-roles.sh tạo hai tài khoản: expense_app chỉ có SELECT, INSERT, UPDATE, DELETE trên các bảng và quyền dùng sequence; expense_exporter chỉ có vai trò pg_monitor. Quyền CREATE trên schema public bị thu hồi khỏi PUBLIC. Tài khoản postgres chỉ dùng cho pgAdmin và backup. Khi bảng users còn trống, ứng dụng tạo tài khoản admin từ biến môi trường với mật khẩu dài ít nhất 12 ký tự.'),
 
   H2('2.5. Giao diện và chức năng ứng dụng'),
-  ...Fig('h2-4-web-login.png', 'Hình 2.4. Trang đăng nhập có CSRF token', { maxH: 420 }),
+  ...Fig('h2-4-web-login.png', 'Hình 2.4. Trang đăng nhập có CSRF token', { maxH: 280 }),
   P('Route /login cung cấp biểu mẫu có CSRF token ẩn. Khi nhập sai mật khẩu, ứng dụng trả HTTP 401 và ghi sự kiện login_failed vào log JSON; sai quá 5 lần trong 5 phút trả 429 và ghi login_rate_limited. Khi đúng, session được regenerate để chống session fixation rồi lưu vào bảng sessions của PostgreSQL. Mật khẩu được băm bằng scrypt với salt ngẫu nhiên 16 byte và so sánh bằng timingSafeEqual.'),
   ...Fig('h2-3-web-dashboard.png', 'Hình 2.5. Trang tổng quan: tổng thu, tổng chi, xu hướng sáu tháng, chi nhiều nhất và giao dịch gần đây'),
   P('Trang tổng quan đọc dữ liệu tháng hiện tại từ PostgreSQL: tổng thu, tổng chi, chênh lệch, số giao dịch, năm danh mục chi nhiều nhất và tám giao dịch gần nhất. Biểu đồ xu hướng sáu tháng được vẽ bằng SVG ngay trong EJS, không dùng thư viện ngoài nên tuân thủ Content-Security-Policy default-src self.'),
   ...Fig('h2-5-web-transactions.png', 'Hình 2.6. Trang giao dịch: biểu mẫu thêm, danh sách lọc theo tháng, nút sửa và xóa'),
   P('Trang giao dịch cho phép thêm giao dịch mới, lọc theo tháng và loại, phân trang 20 dòng, sửa và xóa. Loại thu hay chi được lấy theo danh mục để tránh nhập lệch. Mọi thao tác ghi đều cần CSRF token hợp lệ; dữ liệu đầu vào được kiểm tra số tiền dương, định dạng ngày, danh mục tồn tại và độ dài ghi chú. Trong ca thực nghiệm đã thêm giao dịch "Mua máy tính" 5.000.000 đồng, sửa "Tiền thuê phòng" từ 3.500.000 thành 3.600.000 đồng và tạo rồi xóa một bản ghi thử; các thay đổi này xuất hiện ngay trong pgAdmin ở mục 2.6.'),
-  ...Fig('h2-6-web-reports.png', 'Hình 2.7. Trang báo cáo theo tháng: chi và thu theo danh mục, xu hướng sáu tháng', { maxH: 700 }),
+  ...Fig('h2-6-web-reports.png', 'Hình 2.7. Trang báo cáo theo tháng: chi và thu theo danh mục, xu hướng sáu tháng', { maxH: 360 }),
   P('Trang báo cáo tổng hợp theo tháng được chọn: tổng thu, tổng chi, tiết kiệm, tỷ lệ chi trên thu, phân bổ chi và thu theo danh mục kèm phần trăm, cùng bảng sáu tháng gần nhất. Các truy vấn dùng SUM, GROUP BY và date_trunc của PostgreSQL với tham số hóa.'),
 
   H2('2.6. Kiểm tra PostgreSQL bằng pgAdmin'),
@@ -352,10 +356,10 @@ const phan4 = [
     '    static_configs: [{ targets: ["postgres-exporter:9187"] }]',
   ]),
   ...Fig('h4-1-prometheus-targets.png', 'Hình 4.1. Bốn targets Prometheus ở trạng thái UP'),
-  P('Kết quả API /api/v1/targets xác nhận cadvisor, nginx, postgres và prometheus đều UP. Ngoài trạng thái scrape, truy vấn nginx_up và pg_up đều bằng 1, chứng tỏ exporter còn kết nối được dịch vụ đích chứ không chỉ còn sống. Số lượng container của stack mà cAdvisor nhìn thấy là 11, khớp với docker compose ps.'),
+  P('API /api/v1/targets xác nhận cả bốn job đều UP; truy vấn nginx_up và pg_up bằng 1 chứng tỏ exporter còn kết nối được dịch vụ đích; cAdvisor nhìn thấy 11 container của stack, khớp với docker compose ps.'),
 
   H2('4.2. Dashboard Grafana và dữ liệu container, web, database'),
-  ...Fig('h4-2-grafana-dashboard.png', 'Hình 4.2. Dashboard Expense Tracker – Containers, Web, Database trong folder De 38', { maxH: 820 }),
+  ...Fig('h4-2-grafana-dashboard.png', 'Hình 4.2. Dashboard Expense Tracker – Containers, Web, Database trong folder De 38', { maxH: 430 }),
   P('Grafana được provision tự động datasource Prometheus (uid prometheus) và dashboard từ JSON, không cần thao tác tay. Dashboard có 13 panel: bốn stat phía trên (Targets UP = 4, Nginx UP = 1, PostgreSQL UP = 1, số kết nối database), CPU và RAM theo container, network RX/TX, request/giây và kết nối đang hoạt động của Nginx, transactions/giây và rows fetched/inserted/updated/deleted của PostgreSQL, kích thước database, tổng request qua Nginx và số container đang chạy.'),
   ...Tbl(['PromQL', 'Ý nghĩa', 'Giá trị lúc lấy mẫu'], [
     ['count(up == 1)', 'Số target scrape thành công', '4'],
@@ -384,17 +388,17 @@ const phan4 = [
 
   H2('4.4. LogQL xem log truy cập Nginx'),
   ...Code(['{job="nginx"}']),
-  ...Fig('h4-4-logql-nginx.png', 'Hình 4.3. Truy vấn access log Nginx trên Grafana Explore', { maxH: 700 }),
+  ...Fig('h4-4-logql-nginx.png', 'Hình 4.3. Truy vấn access log Nginx trên Grafana Explore', { maxH: 360 }),
   P('Selector job="nginx" chọn stream access log mà Promtail gắn nhãn. Mỗi dòng cho thấy thời điểm, method, path, status và thời gian xử lý của request thật đi qua reverse proxy. Khi demo cần đặt time range bao phủ thời điểm vừa tạo request; nếu không có kết quả, kiểm tra lần lượt file log nguồn, quyền đọc volume, trạng thái Promtail, endpoint push của Loki và nhãn job.'),
 
   H2('4.5. LogQL lọc request lỗi HTTP'),
   ...Code(['{job="nginx"} | json | status >= 400']),
-  ...Fig('h4-5-logql-status-400.png', 'Hình 4.4. Lọc access log có mã HTTP từ 400 trở lên', { maxH: 700 }),
+  ...Fig('h4-5-logql-status-400.png', 'Hình 4.4. Lọc access log có mã HTTP từ 400 trở lên', { maxH: 360 }),
   P('Pipeline json giải mã các trường, sau đó so sánh trường status theo giá trị số. Kết quả gồm 404 của đường dẫn /not-found-demo, 403 do thiếu CSRF token hoặc chưa đăng nhập và 401 khi sai mật khẩu. Để điều tra sự cố, quản trị viên xem path và request_time rồi đối chiếu với log ứng dụng, thay vì coi mọi mã từ 400 trở lên đều là lỗi máy chủ.'),
 
   H2('4.6. LogQL tìm sự kiện đăng nhập thất bại'),
   ...Code(['{job="app"} | json | event="login_failed"']),
-  ...Fig('h4-6-logql-login-failed.png', 'Hình 4.5. Sự kiện login_failed của ứng dụng trong Loki', { maxH: 700 }),
+  ...Fig('h4-6-logql-login-failed.png', 'Hình 4.5. Sự kiện login_failed của ứng dụng trong Loki', { maxH: 360 }),
   P('Query chọn log ứng dụng, parse JSON và lọc đúng event login_failed. Ca thực nghiệm nhập sai mật khẩu với CSRF token hợp lệ, nhận HTTP 401 và tạo sự kiện tương ứng có username, IP và thời gian, không chứa mật khẩu đã nhập. Cần phân biệt sự kiện này với csrf_denied khi thiếu token và login_rate_limited khi vượt số lần thử; chúng giúp giải thích vì sao một lần đăng nhập bị từ chối.'),
   ...Tbl(['Query', 'Sự kiện tạo thử', 'Dòng trả về (limit 50, 2 giờ)'], [
     ['{job="nginx"}', 'Truy cập trang chủ, CSS, health, báo cáo', '50 (đạt giới hạn)'],
@@ -462,7 +466,7 @@ const ketLuan = [
   P('Hệ thống giám sát thu được metrics của 11 container, Nginx và PostgreSQL. Prometheus có bốn targets UP; Grafana hiển thị dashboard với dữ liệu thực. Loki và Promtail tập trung log ứng dụng và Nginx; ba truy vấn LogQL trả về đúng loại sự kiện. Các biện pháp hardening được kiểm chứng bằng UID, inspect và quyền PostgreSQL. Backup được phục hồi vào database thử với số dòng và checksum khớp.'),
   P('Giới hạn của bài gồm một tài khoản quản trị, một instance ứng dụng, rate limit lưu trong bộ nhớ, chứng chỉ tự ký chỉ dùng demo, chưa có Alertmanager gửi cảnh báo ra ngoài, chưa quét CVE cho từng image, chưa kiểm thử tải kéo dài, chưa có CI/CD và log file chưa có rotation tự động. Ứng dụng chưa có tính năng nhiều người dùng với ngân sách riêng, xuất Excel hay nhắc nhở định kỳ.'),
   P('Hướng phát triển ưu tiên là bổ sung tài khoản cho từng thành viên gia đình và ngân sách theo danh mục, thêm Alertmanager với kênh thông báo, quét lỗ hổng image bằng Trivy trong CI, chuyển Promtail sang Grafana Alloy, dùng chứng chỉ CA tin cậy khi có tên miền và thêm log rotation. Với nhiều instance, cần rate limit chia sẻ trạng thái và cân bằng tải phía Nginx.'),
-  P('Qua quá trình thực nghiệm, việc thấy container ở trạng thái Up chưa đủ để kết luận hệ thống hoạt động. Cần kiểm tra lần lượt chức năng web, dữ liệu trong database, metrics của từng dịch vụ, sự kiện trong log và quyền thực tế của tiến trình. Các bước kiểm chứng này chính là nội dung cốt lõi của quy trình triển khai và quản trị mà đề tài hướng tới.'),
+  P('Qua thực nghiệm, việc thấy container ở trạng thái Up chưa đủ để kết luận hệ thống hoạt động; cần kiểm tra lần lượt chức năng web, dữ liệu trong database, metrics, sự kiện trong log và quyền thực tế của tiến trình. Đó chính là nội dung cốt lõi của quy trình triển khai và quản trị mà đề tài hướng tới.'),
 ];
 
 const taiLieu = [
@@ -496,12 +500,13 @@ const doc = new Document({
   styles: {
     default: { document: { run: { font: FONT, size: SZ } } },
     paragraphStyles: [
+      // Giong file mau: Heading 1 18pt dam, Heading 2 16pt, Heading 3 14pt, mau den
       { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true,
-        run: { font: FONT, size: 32, bold: true, allCaps: true }, paragraph: { spacing: { before: 0, after: 240 }, outlineLevel: 0 } },
+        run: { font: FONT, size: 36, bold: true, color: '000000' }, paragraph: { spacing: { before: 360, after: 80 }, outlineLevel: 0 } },
       { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', quickFormat: true,
-        run: { font: FONT, size: 28, bold: true }, paragraph: { spacing: { before: 240, after: 120 }, outlineLevel: 1 } },
+        run: { font: FONT, size: 32, bold: false, color: '000000' }, paragraph: { spacing: { before: 160, after: 80 }, outlineLevel: 1 } },
       { id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal', quickFormat: true,
-        run: { font: FONT, size: 26, bold: true, italics: true }, paragraph: { spacing: { before: 160, after: 80 }, outlineLevel: 2 } },
+        run: { font: FONT, size: 28, bold: false, color: '000000' }, paragraph: { spacing: { before: 160, after: 80 }, outlineLevel: 2 } },
     ],
   },
   numbering: {
@@ -510,12 +515,12 @@ const doc = new Document({
   },
   sections: [
     {
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 2 * CM, bottom: 2 * CM, left: 3 * CM, right: 2 * CM } } },
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 2 * CM, bottom: 2 * CM, left: 3 * CM, right: 1.5 * CM } } },
       children: cover,
     },
     {
       properties: {
-        page: { size: { width: 11906, height: 16838 }, margin: { top: 2 * CM, bottom: 2 * CM, left: 3 * CM, right: 2 * CM }, pageNumbers: { start: 1 } },
+        page: { size: { width: 11906, height: 16838 }, margin: { top: 2 * CM, bottom: 2 * CM, left: 3 * CM, right: 1.5 * CM }, pageNumbers: { start: 1 } },
       },
       footers: {
         default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 22 })] })] }),
@@ -532,6 +537,15 @@ const doc = new Document({
 doc.sections; // no-op
 
 Packer.toBuffer(doc).then((buf) => {
-  fs.writeFileSync(OUT, buf);
-  console.log('Da tao', OUT, `${(buf.length / 1024 / 1024).toFixed(2)} MB`);
+  let target = OUT;
+  try {
+    fs.writeFileSync(target, buf);
+  } catch (err) {
+    if (err.code !== 'EACCES' && err.code !== 'EBUSY' && err.code !== 'EPERM') throw err;
+    // File dang mo trong Word -> ghi sang ten khac
+    target = OUT.replace(/\.docx$/, '_moi.docx');
+    fs.writeFileSync(target, buf);
+    console.log('File goc dang mo trong Word, da ghi sang file moi.');
+  }
+  console.log('Da tao', target, `${(buf.length / 1024 / 1024).toFixed(2)} MB`);
 });
