@@ -450,17 +450,16 @@ const phan5 = [
     ['Hardening', 'UID, read-only, cap_drop, mạng internal, PortBindings rỗng, grants được kiểm tra', 'Đạt'],
     ['Backup và phục hồi', 'Số dòng và checksum md5 ba bảng khớp giữa nguồn và bản phục hồi', 'Đạt'],
   ], [4.5, 9.5, 2], { caption: 'Bảng 5.1. Kết quả kiểm thử', center: [2] }),
-  P('Tests độc lập dùng repository giả và MemoryStore nên không đủ để khẳng định PostgreSQL hoạt động. Vì vậy báo cáo bổ sung kiểm tra trên container thật bằng smoke test, thao tác trình duyệt, pgAdmin, API của Prometheus và Loki. Khi stack vừa khởi động, một số request hết thời gian chờ 15 giây do image đang tải; sau khi các dịch vụ healthy, toàn bộ kiểm tra đều PASS.'),
+  P('Tests độc lập dùng repository giả nên không đủ để khẳng định PostgreSQL hoạt động; vì vậy báo cáo bổ sung kiểm tra trên container thật bằng smoke test, trình duyệt, pgAdmin, API của Prometheus và Loki. Sau khi các dịch vụ healthy, toàn bộ kiểm tra đều PASS.'),
 
   H2('5.2. Backup, phục hồi và bảo toàn dữ liệu'),
-  P('Script backup.sh chạy pg_dump trong container PostgreSQL và ghi file SQL vào thư mục backups nằm ngoài Git. Script restore-test.sh tạo database expense_restore_test riêng, từ chối nếu tên đó đã tồn tại, nhập dump, so sánh số dòng và checksum md5 của toàn bộ nội dung từng bảng rồi xóa database thử. Cách này không chạm vào database đang phục vụ website.'),
-  ...Code(['sh scripts/backup.sh', 'sh scripts/restore-test.sh backups/expense-20261023-141119.sql']),
+  P('Script backup.sh chạy pg_dump trong container PostgreSQL và ghi file SQL vào thư mục backups nằm ngoài Git. Script restore-test.sh tạo database expense_restore_test riêng, nhập dump, so sánh số dòng và checksum md5 từng bảng rồi xóa database thử, không chạm vào database đang phục vụ website.'),
   ...Tbl(['Bảng', 'Số dòng nguồn', 'Số dòng phục hồi', 'Checksum md5 (khớp)'], [
     ['users', '1', '1', 'c52df0eb4342588aaaeac9a69ad0eccf'],
     ['categories', '10', '10', '38e74656b5f3a51548de4315a19a13f5'],
     ['transactions', '17', '17', 'f5210b16c40063f902160c7c89af83f6'],
   ], [3, 3, 3.2, 6.8], { caption: 'Bảng 5.2. Đối chiếu dữ liệu nguồn và bản phục hồi (lần backup 23/10/2026)', center: [1, 2] }),
-  P('Bảng sessions thay đổi theo request nên không dùng làm tiêu chí dữ liệu ổn định. Sau khi build lại container app nhiều lần và bật TLS, các giao dịch vẫn còn trong PostgreSQL vì dữ liệu nằm trong named volume. Bài không dùng lệnh down -v; lệnh này xóa volume và chỉ dùng khi muốn làm lại từ đầu.'),
+  P('Bảng sessions thay đổi theo request nên không dùng làm tiêu chí. Sau nhiều lần build lại app và bật TLS, giao dịch vẫn còn vì dữ liệu nằm trong named volume; bài không dùng down -v vì lệnh này xóa volume.'),
 
   H2('5.3. Các lỗi gặp và cách xử lý'),
   ...Tbl(['Hiện tượng', 'Nguyên nhân và cách xử lý'], [
@@ -471,7 +470,6 @@ const phan5 = [
     ['pg_dump và psql trong container hỏi mật khẩu rồi treo', 'auth-local=scram-sha-256 bắt buộc mật khẩu cả socket cục bộ. Script truyền PGPASSWORD từ biến môi trường của container'],
     ['CSS không tải khi mở http://localhost:8080', 'Helmet thêm upgrade-insecure-requests. Chỉ bật directive này khi COOKIE_SECURE=true'],
     ['Giao dịch "Lương" bị ghi là Chi', 'Biểu mẫu cho chọn loại độc lập với danh mục. Sửa để loại thu/chi lấy theo danh mục và cập nhật dữ liệu lệch'],
-    ['Thống kê pgAdmin hiện Live tuples 0', 'Bộ đếm chưa cập nhật sau khi PostgreSQL khởi động lại. Chạy ANALYZE rồi làm mới'],
   ], [6, 10], { caption: 'Bảng 5.3. Lỗi gặp trong quá trình chạy thật và cách xử lý' }),
 
   H2('5.4. Đối chiếu yêu cầu và kịch bản demo'),

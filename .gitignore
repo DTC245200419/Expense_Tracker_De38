@@ -25,6 +25,8 @@ docs/evidence/*.tmp
 ~$*.docx
 docs/report/pdf/
 docs/report/*_moi.docx
+docs/report/*_v*.docx
+docs/report/headings.json
 
 # He dieu hanh / IDE
 .DS_Store
